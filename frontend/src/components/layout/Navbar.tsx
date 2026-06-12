@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Suspense } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { Heart, Package, ShoppingCart, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SearchBar } from "@/components/product/SearchBar";
@@ -10,22 +10,21 @@ import { useCartStore } from "@/store/cart.store";
 import { useUIStore } from "@/store/ui.store";
 
 export function Navbar() {
+  const [mounted, setMounted] = useState(false);
   const itemCount = useCartStore((s) => s.getItemCount());
   const openCart = useUIStore((s) => s.openCart);
   const user = useAuthStore((s) => s.user);
 
+  useEffect(() => setMounted(true), []);
+
   return (
     <header className="sticky top-0 z-50 bg-gray-900 text-white shadow">
-      <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3">
+      <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-4 gap-y-3 px-4 py-3">
         <Link href="/" className="flex-shrink-0 text-xl font-bold text-amber-400">
           amazon<span className="text-white">clone</span>
         </Link>
-        <div className="hidden flex-1 md:block">
-          <Suspense fallback={<div className="h-10 flex-1 rounded-md bg-gray-800" />}>
-            <SearchBar />
-          </Suspense>
-        </div>
-        <nav className="flex items-center gap-2">
+
+        <nav className="ml-auto flex items-center gap-2 md:order-3">
           {user ? (
             <>
               <Link href="/orders">
@@ -59,7 +58,7 @@ export function Navbar() {
             onClick={openCart}
           >
             <ShoppingCart className="h-5 w-5" />
-            {itemCount > 0 && (
+            {mounted && itemCount > 0 && (
               <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-xs font-bold text-black">
                 {itemCount}
               </span>
@@ -67,11 +66,12 @@ export function Navbar() {
             <span className="hidden sm:inline">Cart</span>
           </Button>
         </nav>
-      </div>
-      <div className="px-4 pb-3 md:hidden">
-        <Suspense fallback={<div className="h-10 w-full rounded-md bg-gray-800" />}>
-          <SearchBar />
-        </Suspense>
+
+        <div className="w-full md:order-2 md:flex-1">
+          <Suspense fallback={<div className="h-10 w-full rounded-md bg-gray-800" />}>
+            <SearchBar />
+          </Suspense>
+        </div>
       </div>
     </header>
   );

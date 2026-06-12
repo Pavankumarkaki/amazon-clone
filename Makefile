@@ -1,4 +1,5 @@
-.PHONY: db-up db-down backend-install backend-migrate backend-seed backend-dev frontend-install frontend-dev dev test
+.PHONY: db-up db-down backend-install backend-migrate backend-seed backend-dev frontend-install frontend-dev dev test \
+	docker-build-backend docker-build-frontend docker-build
 
 db-up:
 	docker compose up -d
@@ -30,3 +31,11 @@ dev: db-up backend-migrate backend-seed
 test:
 	cd backend && . .venv/bin/activate && pytest
 	cd frontend && npm run test
+
+docker-build-backend:
+	docker build -t amazon-clone-backend ./backend
+
+docker-build-frontend:
+	docker build --build-arg NEXT_PUBLIC_API_URL=/api/v1 -t amazon-clone-frontend ./frontend
+
+docker-build: docker-build-backend docker-build-frontend

@@ -1,0 +1,188 @@
+# Build, push to Azure Container Registry, and deploy to AKS.
+#
+# Flow:
+#   push to main (path-filtered) or manual run
+#     -> detect backend/frontend changes
+#     -> wait for "publish" environment approval, then build + push changed images
+#     -> wait for "production" environment approval, then deploy only changed services
+#
+# Required GitHub repository variables (Settings -> Secrets and variables -> Actions -> Variables):
+#   ACR_NAME              e.g. amazonclonepavan123
+#   AKS_RESOURCE_GROUP    e.g. amazon-clone-rg
+#   AKS_CLUSTER_NAME      e.g. amazon-clone-aks
+#   AZURE_CLIENT_ID       App registration client ID (OIDC)
+#   AZURE_TENANT_ID       Azure AD tenant ID
+#   AZURE_SUBSCRIPTION_ID Azure subscription ID
+#
+# Required GitHub environments (Settings -> Environments):
+#   publish    - add Required reviewers (manual "Publish" approval before pushing images)
+#   production - add Required reviewers (manual "Deploy" approval before kubectl rollout)
+#
+# Azure setup (one time):
+#   1. Create an App Registration / service principal with AcrPush on ACR and Azure Kubernetes Service Cluster User Role on AKS
+#   2. Add a federated credential for GitHub OIDC:
+#        issuer: https://token.actions.githubusercontent.com
+#        subject: repo:<owner>/<repo>:environment:publish
+#      Repeat for environment:production, or use repo:<owner>/<repo>:ref:refs/heads/main for branch-wide access
+
+name: Azure AKS Deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - "frontend/**"
+      - "k8s/backend-*.yaml"
+      - "k8s/frontend-*.yaml"
+      - ".github/workflows/azure-aks-deploy.yml"
+      - ".github/scripts/**"
+  workflow_dispatch:
+    inputs:
+      force_backend:
+        description: "Build, publish, and deploy backend"
+        type: boolean
+        default: false
+      force_frontend:
+        description: "Build, publish, and deploy frontend"
+        type: boolean
+        default: false
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: azure-aks-deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  IMAGE_TAG: ${{ github.sha }}
+  K8S_NAMESPACE: amazon-clone
+
+jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.set.outputs.backend }}
+      frontend: ${{ steps.set.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v3
+        if: github.event_name == 'push'
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+              - 'k8s/backend-*.yaml'
+            frontend:
+              - 'frontend/**'
+              - 'k8s/frontend-*.yaml'
+
+      - id: set
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "backend=${{ inputs.force_backend }}" >> "$GITHUB_OUTPUT"
+            echo "frontend=${{ inputs.force_frontend }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "backend=${{ steps.filter.outputs.backend }}" >> "$GITHUB_OUTPUT"
+            echo "frontend=${{ steps.filter.outputs.frontend }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Summary
+        run: |
+          echo "Backend changed: ${{ steps.set.outputs.backend }}"
+          echo "Frontend changed: ${{ steps.set.outputs.frontend }}"
+
+  gate:
+    name: Validate scope
+    needs: changes
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ensure at least one service is in scope
+        run: |
+          if [ "${{ needs.changes.outputs.backend }}" != "true" ] && [ "${{ needs.changes.outputs.frontend }}" != "true" ]; then
+            echo "Nothing to build or deploy. Change backend/, frontend/, or use manual workflow inputs."
+            exit 1
+          fi
+
+  publish:
+    name: Publish images to ACR
+    needs: [changes, gate]
+    runs-on: ubuntu-latest
+    environment: publish
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Log in to ACR
+        run: az acr login --name "${{ vars.ACR_NAME }}"
+
+      - name: Build and push backend image
+        if: needs.changes.outputs.backend == 'true'
+        run: |
+          IMAGE="${{ vars.ACR_NAME }}.azurecr.io/amazon-clone-backend"
+          docker build -t "${IMAGE}:${{ env.IMAGE_TAG }}" -t "${IMAGE}:latest" ./backend
+          docker push "${IMAGE}:${{ env.IMAGE_TAG }}"
+          docker push "${IMAGE}:latest"
+
+      - name: Build and push frontend image
+        if: needs.changes.outputs.frontend == 'true'
+        run: |
+          IMAGE="${{ vars.ACR_NAME }}.azurecr.io/amazon-clone-frontend"
+          docker build \
+            --build-arg NEXT_PUBLIC_API_URL=/api/v1 \
+            -t "${IMAGE}:${{ env.IMAGE_TAG }}" \
+            -t "${IMAGE}:latest" \
+            ./frontend
+          docker push "${IMAGE}:${{ env.IMAGE_TAG }}"
+          docker push "${IMAGE}:latest"
+
+  deploy:
+    name: Deploy to AKS
+    needs: [changes, publish]
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - uses: azure/setup-kubectl@v4
+
+      - name: Configure kubectl for AKS
+        uses: azure/aks-set-context@v4
+        with:
+          resource-group: ${{ vars.AKS_RESOURCE_GROUP }}
+          cluster-name: ${{ vars.AKS_CLUSTER_NAME }}
+          admin: "false"
+
+      - name: Deploy backend
+        if: needs.changes.outputs.backend == 'true'
+        env:
+          ACR_NAME: ${{ vars.ACR_NAME }}
+          IMAGE_TAG: ${{ env.IMAGE_TAG }}
+          K8S_NAMESPACE: ${{ env.K8S_NAMESPACE }}
+        run: bash .github/scripts/deploy-backend.sh
+
+      - name: Deploy frontend
+        if: needs.changes.outputs.frontend == 'true'
+        env:
+          ACR_NAME: ${{ vars.ACR_NAME }}
+          IMAGE_TAG: ${{ env.IMAGE_TAG }}
+          K8S_NAMESPACE: ${{ env.K8S_NAMESPACE }}
+        run: bash .github/scripts/deploy-frontend.sh

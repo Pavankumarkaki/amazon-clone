@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { Suspense, useEffect, useState } from "react";
 import { Heart, Package, ShoppingCart, User } from "lucide-react";
@@ -20,8 +21,8 @@ export function Navbar() {
   return (
     <header className="sticky top-0 z-50 bg-gray-900 text-white shadow">
       <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-4 gap-y-3 px-4 py-3">
-        <Link href="/" className="flex-shrink-0 text-xl font-bold text-amber-400">
-          amazon<span className="text-white">clone</span>
+        <Link href="/" className="flex shrink-0 text-xl font-bold text-amber-400">
+          <Image src="/logo.svg" alt="Amazon Clone" width={100} height={100} className="h-12 w-24" />
         </Link>
 
         <nav className="ml-auto flex items-center gap-2 md:order-3">

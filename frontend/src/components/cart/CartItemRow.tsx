@@ -16,7 +16,7 @@ export function CartItemRow({ item }: CartItemRowProps) {
 
   return (
     <div className="flex gap-4 border-b border-gray-200 py-4">
-      <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded bg-white">
+      <div className="h-20 w-20 shrink-0 overflow-hidden rounded bg-white">
         {item.imageUrl ? (
           <img src={item.imageUrl} alt={item.title} className="h-full w-full object-contain" />
         ) : (

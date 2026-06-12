@@ -5,11 +5,17 @@ metadata:
   namespace: amazon-clone
   annotations:
     nginx.ingress.kubernetes.io/proxy-body-size: "10m"
-    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: letsencrypt-prod
 spec:
   ingressClassName: nginx
+  tls:
+    - hosts:
+        - shop.pa1.tech
+      secretName: shop-pa1-tech-tls
   rules:
-    - http:
+    - host: shop.pa1.tech
+      http:
         paths:
           - path: /api
             pathType: Prefix

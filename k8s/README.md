@@ -160,11 +160,66 @@ make docker-build
 | `backend-*.yaml` | FastAPI Deployment, Service, migration/seed Jobs |
 | `frontend-*.yaml` | Next.js Deployment + Service |
 | `ingress.yaml` | Routes `/api` to backend, `/` to frontend |
+| `cert-manager-issuer.yaml` | Let's Encrypt ClusterIssuer for HTTPS |
+
+## HTTPS (shop.pa1.tech)
+
+Chrome shows "Not secure" until TLS is enabled. Use [cert-manager](https://cert-manager.io/) with Let's Encrypt:
+
+### 1. Install cert-manager
+
+```bash
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.14.5/cert-manager.yaml
+kubectl wait --namespace cert-manager \
+  --for=condition=ready pod \
+  --selector=app.kubernetes.io/instance=cert-manager \
+  --timeout=300s
+```
+
+### 2. Create the issuer
+
+Edit `cert-manager-issuer.yaml` if you want a different email, then:
+
+```bash
+kubectl apply -f k8s/cert-manager-issuer.yaml
+```
+
+### 3. Apply ingress with TLS
+
+```bash
+kubectl apply -f k8s/ingress.yaml
+```
+
+Watch the certificate (ready in 1–3 minutes when DNS points to the cluster):
+
+```bash
+kubectl get certificate -n amazon-clone
+kubectl describe certificate shop-pa1-tech-tls -n amazon-clone
+```
+
+### 4. Update CORS to HTTPS
+
+```bash
+export APP_URL=https://shop.pa1.tech
+
+kubectl create secret generic amazon-clone-secrets \
+  --namespace amazon-clone \
+  --from-literal=POSTGRES_PASSWORD="$POSTGRES_PASSWORD" \
+  --from-literal=DATABASE_URL="postgresql+asyncpg://amazon:${POSTGRES_PASSWORD}@postgres:5432/amazon_clone" \
+  --from-literal=SECRET_KEY="$SECRET_KEY" \
+  --from-literal=CORS_ORIGINS="$APP_URL" \
+  --from-literal=MAIL_USERNAME="" \
+  --from-literal=MAIL_PASSWORD="" \
+  --dry-run=client -o yaml | kubectl apply -f -
+
+kubectl rollout restart deployment/backend -n amazon-clone
+```
+
+Open **https://shop.pa1.tech** — Chrome should show the padlock.
 
 ## Production Notes
 
 - **Database**: The included PostgreSQL StatefulSet is suitable for demos. For production, use [Azure Database for PostgreSQL](https://azure.microsoft.com/en-us/products/postgresql) and update `DATABASE_URL` in secrets.
-- **HTTPS**: Add a TLS certificate via [cert-manager](https://cert-manager.io/) or Azure Key Vault.
 - **Secrets**: Store secrets in [Azure Key Vault](https://azure.microsoft.com/en-us/products/key-vault) with the [Secrets Store CSI Driver](https://secrets-store-csi-driver.sigs.k8s.io/).
 - **Scaling**: Adjust `replicas` in deployment manifests or use HPA.
 

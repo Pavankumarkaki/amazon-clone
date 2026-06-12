@@ -4,7 +4,7 @@ metadata:
   name: frontend
   namespace: amazon-clone
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: frontend
@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: ACR_NAME.azurecr.io/amazon-clone-frontend:latest
+          image: amazonclonepavan123.azurecr.io/amazon-clone-frontend:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 3000

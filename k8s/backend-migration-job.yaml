@@ -22,7 +22,7 @@ spec:
               done
       containers:
         - name: migrate
-          image: ACR_NAME.azurecr.io/amazon-clone-backend:latest
+          image: amazonclonepavan123.azurecr.io/amazon-clone-backend:latest
           command: ["alembic", "upgrade", "head"]
           env:
             - name: DATABASE_URL

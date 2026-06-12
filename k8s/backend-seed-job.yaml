@@ -22,7 +22,7 @@ spec:
               done
       containers:
         - name: seed
-          image: ACR_NAME.azurecr.io/amazon-clone-backend:latest
+          image: amazonclonepavan123.azurecr.io/amazon-clone-backend:latest
           command: ["python", "-m", "app.utils.seed"]
           env:
             - name: DATABASE_URL

@@ -87,7 +87,9 @@ export default function ProductDetailPage() {
     );
   }
 
-  const images = product.images.map((img) => img.url);
+  const images = product.images
+    .map((img) => img.url)
+    .filter((url) => !url.toLowerCase().includes("thumbnail"));
 
   const handleAddToCart = async (quantity = 1) => {
     await addProductToCart(product, quantity);

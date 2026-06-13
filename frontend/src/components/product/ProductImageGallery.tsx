@@ -33,6 +33,8 @@ interface LensState {
   y: number;
   width: number;
   height: number;
+  offsetX: number;
+  offsetY: number;
 }
 
 interface ImageBounds {
@@ -41,18 +43,71 @@ interface ImageBounds {
 }
 
 interface ZoomWindow extends ImageBounds {
-  scaleX: number;
-  scaleY: number;
+  scale: number;
   top: number;
   left: number;
 }
 
-function calculateZoomWindow(imgRect: DOMRect): ImageBounds {
-  const flyoutLeft = imgRect.right + FLYOUT_GAP;
+interface RenderedImageBounds extends ImageBounds {
+  offsetX: number;
+  offsetY: number;
+  aspectRatio: number;
+}
+
+function getRenderedImageBounds(img: HTMLImageElement): RenderedImageBounds | null {
+  const rect = img.getBoundingClientRect();
+  const { naturalWidth, naturalHeight } = img;
+
+  if (!naturalWidth || !naturalHeight) {
+    return {
+      width: rect.width,
+      height: rect.height,
+      offsetX: 0,
+      offsetY: 0,
+      aspectRatio: rect.width / rect.height || 1,
+    };
+  }
+
+  const elementAspect = rect.width / rect.height;
+  const imageAspect = naturalWidth / naturalHeight;
+
+  if (imageAspect > elementAspect) {
+    const width = rect.width;
+    const height = width / imageAspect;
+    return {
+      width,
+      height,
+      offsetX: 0,
+      offsetY: (rect.height - height) / 2,
+      aspectRatio: imageAspect,
+    };
+  }
+
+  const height = rect.height;
+  const width = height * imageAspect;
+  return {
+    width,
+    height,
+    offsetX: (rect.width - width) / 2,
+    offsetY: 0,
+    aspectRatio: imageAspect,
+  };
+}
+
+function calculateZoomWindow(imgRight: number, imgTop: number, aspectRatio: number): ImageBounds {
+  const flyoutLeft = imgRight + FLYOUT_GAP;
   const rightPartWidth = window.innerWidth - flyoutLeft - VIEWPORT_EDGE_MARGIN;
-  const width = Math.max(480, rightPartWidth * RIGHT_PART_COVERAGE);
-  const maxHeight = window.innerHeight - imgRect.top - VIEWPORT_EDGE_MARGIN;
-  const height = Math.min(maxHeight, Math.max(imgRect.height, 650));
+  const maxWidth = Math.max(480, rightPartWidth * RIGHT_PART_COVERAGE);
+  const maxHeight = window.innerHeight - imgTop - VIEWPORT_EDGE_MARGIN;
+
+  let width = maxWidth;
+  let height = width / aspectRatio;
+
+  if (height > maxHeight) {
+    height = maxHeight;
+    width = height * aspectRatio;
+  }
+
   return { width, height };
 }
 
@@ -68,13 +123,12 @@ export function ProductImageGallery({
   const [isHovering, setIsHovering] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
-  const [lens, setLens] = useState<LensState>({ x: 0, y: 0, width: 0, height: 0 });
+  const [lens, setLens] = useState<LensState>({ x: 0, y: 0, width: 0, height: 0, offsetX: 0, offsetY: 0 });
   const [imageBounds, setImageBounds] = useState<ImageBounds>({ width: 0, height: 0 });
   const [zoomWindow, setZoomWindow] = useState<ZoomWindow>({
     width: 0,
     height: 0,
-    scaleX: 1,
-    scaleY: 1,
+    scale: 1,
     top: 0,
     left: 0,
   });
@@ -94,7 +148,9 @@ export function ProductImageGallery({
   const updateImageBounds = useCallback(() => {
     const img = imageRef.current;
     if (!img) return;
-    setImageBounds({ width: img.offsetWidth, height: img.offsetHeight });
+    const rendered = getRenderedImageBounds(img);
+    if (!rendered) return;
+    setImageBounds({ width: rendered.width, height: rendered.height });
   }, []);
 
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
@@ -102,9 +158,12 @@ export function ProductImageGallery({
     if (!img) return;
 
     const rect = img.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const { width: imgW, height: imgH } = rect;
+    const rendered = getRenderedImageBounds(img);
+    if (!rendered) return;
+
+    const x = e.clientX - rect.left - rendered.offsetX;
+    const y = e.clientY - rect.top - rendered.offsetY;
+    const { width: imgW, height: imgH } = rendered;
 
     if (x < 0 || y < 0 || x > imgW || y > imgH) {
       setIsHovering(false);
@@ -121,16 +180,21 @@ export function ProductImageGallery({
     lensX = Math.max(0, Math.min(lensX, imgW - lensW));
     lensY = Math.max(0, Math.min(lensY, imgH - lensH));
 
-    const zoom = calculateZoomWindow(rect);
-    const scaleX = zoom.width / lensW;
-    const scaleY = zoom.height / lensH;
+    const zoom = calculateZoomWindow(rect.right, rect.top, rendered.aspectRatio);
+    const scale = zoom.width / lensW;
 
-    setLens({ x: lensX, y: lensY, width: lensW, height: lensH });
+    setLens({
+      x: lensX,
+      y: lensY,
+      width: lensW,
+      height: lensH,
+      offsetX: rendered.offsetX,
+      offsetY: rendered.offsetY,
+    });
     setImageBounds({ width: imgW, height: imgH });
     setZoomWindow({
       ...zoom,
-      scaleX,
-      scaleY,
+      scale,
       top: rect.top,
       left: rect.right + FLYOUT_GAP,
     });
@@ -219,8 +283,8 @@ export function ProductImageGallery({
           zIndex: 9999,
           backgroundImage: `url(${currentImage})`,
           backgroundRepeat: "no-repeat",
-          backgroundSize: `${imageBounds.width * zoomWindow.scaleX}px ${imageBounds.height * zoomWindow.scaleY}px`,
-          backgroundPosition: `-${lens.x * zoomWindow.scaleX}px -${lens.y * zoomWindow.scaleY}px`,
+          backgroundSize: `${imageBounds.width * zoomWindow.scale}px ${imageBounds.height * zoomWindow.scale}px`,
+          backgroundPosition: `-${lens.x * zoomWindow.scale}px -${lens.y * zoomWindow.scale}px`,
         }}
         aria-hidden
       />
@@ -342,8 +406,8 @@ export function ProductImageGallery({
                 <div
                   className="pointer-events-none absolute amazon-zoom-lens"
                   style={{
-                    left: lens.x,
-                    top: lens.y,
+                    left: lens.x + lens.offsetX,
+                    top: lens.y + lens.offsetY,
                     width: lens.width,
                     height: lens.height,
                   }}

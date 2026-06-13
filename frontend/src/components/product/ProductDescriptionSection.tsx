@@ -5,27 +5,29 @@ interface ProductDescriptionSectionProps {
 }
 
 export function ProductDescriptionSection({ product }: ProductDescriptionSectionProps) {
-  const paragraphs = product.description.split(/\n\n+/).filter(Boolean);
-  const sections = paragraphs.length > 1 ? paragraphs : splitIntoSections(product.description);
-
   return (
-    <section className="border-t-[3px] border-[var(--color-border-light,#E7E7E7)] bg-white py-5">
-      <div className="mx-auto max-w-[var(--container-max)] px-4">
+    <section
+      id="product-description"
+      className="border-t-[3px] border-(--color-border-light,#E7E7E7) bg-white py-5"
+    >
+      <div className="mx-auto max-w-(--container-max) px-4">
         <h2 className="text-product-section-heading mb-4">Product description</h2>
 
         <div className="space-y-6 pl-0 lg:pl-8">
-          {sections.map((section, i) => (
-            <div key={i}>
-              {sections.length > 1 && (
-                <h3 className="mb-2 text-base font-bold text-[var(--color-text-primary)]">
-                  {getSectionHeading(i)}
-                </h3>
-              )}
-              <p className="whitespace-pre-line text-sm leading-relaxed text-[var(--color-text-primary)]">
-                {section}
-              </p>
+          <p className="whitespace-pre-line text-sm leading-relaxed text-(--color-text-primary)">
+            {product.description}
+          </p>
+
+          {product.features.length > 0 && (
+            <div>
+              <h3 className="mb-2 text-base font-bold text-(--color-text-primary)">Key features</h3>
+              <ul className="list-disc space-y-2 pl-5 text-sm leading-relaxed text-(--color-text-primary)">
+                {product.features.map((feature) => (
+                  <li key={feature}>{feature}</li>
+                ))}
+              </ul>
             </div>
-          ))}
+          )}
 
           {product.images.length > 1 && (
             <div className="grid gap-4 pt-4 sm:grid-cols-2">
@@ -33,8 +35,8 @@ export function ProductDescriptionSection({ product }: ProductDescriptionSection
                 <img
                   key={img.id}
                   src={img.url}
-                  alt=""
-                  className="w-full rounded-sm border border-[var(--color-border)] object-contain"
+                  alt={`${product.title} - image ${img.sort_order + 1}`}
+                  className="w-full rounded-sm border border-(--color-border) object-contain"
                 />
               ))}
             </div>
@@ -43,20 +45,4 @@ export function ProductDescriptionSection({ product }: ProductDescriptionSection
       </div>
     </section>
   );
-}
-
-function splitIntoSections(description: string): string[] {
-  const sentences = description.match(/[^.!?]+[.!?]+/g) ?? [description];
-  if (sentences.length <= 3) return [description];
-
-  const mid = Math.ceil(sentences.length / 2);
-  return [
-    sentences.slice(0, mid).join(" ").trim(),
-    sentences.slice(mid).join(" ").trim(),
-  ];
-}
-
-function getSectionHeading(index: number): string {
-  const headings = ["Overview", "Features & Benefits", "Additional Details"];
-  return headings[index] ?? `Section ${index + 1}`;
 }

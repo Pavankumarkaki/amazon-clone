@@ -1,4 +1,4 @@
-import { formatPrice } from "@/lib/utils";
+import { DEFAULT_CURRENCY, formatPrice } from "@/lib/utils";
 
 interface PriceTagProps {
   cents: number;
@@ -10,7 +10,7 @@ interface PriceTagProps {
 
 export function PriceTag({
   cents,
-  currency = "USD",
+  currency = DEFAULT_CURRENCY,
   className = "",
   size = "md",
   showCents = true,

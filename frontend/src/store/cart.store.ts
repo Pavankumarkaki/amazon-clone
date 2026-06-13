@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { CartItem } from "@/types";
+import { DEFAULT_CURRENCY } from "@/lib/utils";
 
 interface CartState {
   items: CartItem[];
@@ -29,7 +30,7 @@ export const useCartStore = create<CartState>()(
               ),
             };
           }
-          return { items: [...state.items, { ...item, quantity }] };
+          return { items: [...state.items, { ...item, quantity, currency: item.currency ?? DEFAULT_CURRENCY }] };
         });
       },
 

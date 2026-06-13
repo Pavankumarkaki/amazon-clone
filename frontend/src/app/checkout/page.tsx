@@ -9,9 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useQueryClient } from "@tanstack/react-query";
 import { CartSummary } from "@/components/cart/CartSummary";
 import { formatPrice } from "@/lib/utils";
+import { clearServerCart, useCartItems, useCartTotals, useCartCurrency } from "@/hooks/useCart";
 import { useCreateOrder } from "@/hooks/useOrders";
+import { queryKeys } from "@/lib/queryKeys";
+import { useAuthStore } from "@/store/auth.store";
 import { useCartStore } from "@/store/cart.store";
 
 const addressSchema = z.object({
@@ -31,10 +35,12 @@ const STEPS = ["Shipping", "Payment", "Review"];
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const items = useCartStore((s) => s.items);
-  const subtotal = useCartStore((s) => s.getSubtotalCents());
-  const itemCount = useCartStore((s) => s.getItemCount());
-  const clearCart = useCartStore((s) => s.clear);
+  const queryClient = useQueryClient();
+  const user = useAuthStore((s) => s.user);
+  const { items, isLoading } = useCartItems();
+  const { subtotalCents, taxCents, totalCents, itemCount } = useCartTotals();
+  const currency = useCartCurrency();
+  const clearGuestCart = useCartStore((s) => s.clear);
   const createOrder = useCreateOrder();
 
   const {
@@ -43,8 +49,16 @@ export default function CheckoutPage() {
     formState: { errors, isSubmitting },
   } = useForm<AddressForm>({
     resolver: zodResolver(addressSchema),
-    defaultValues: { country: "United States" },
+    defaultValues: { country: "India" },
   });
+
+  if (isLoading) {
+    return (
+      <div className="mx-auto max-w-(--container-max) px-4 py-16 text-center">
+        <p className="text-(--color-text-secondary)">Loading checkout...</p>
+      </div>
+    );
+  }
 
   if (items.length === 0) {
     return (
@@ -63,7 +77,11 @@ export default function CheckoutPage() {
         items: items.map((i) => ({ product_id: i.productId, quantity: i.quantity })),
         shipping_address: data,
       });
-      clearCart();
+      clearGuestCart();
+      if (user) {
+        await clearServerCart();
+        queryClient.invalidateQueries({ queryKey: queryKeys.cart.all });
+      }
       toast.success("Order placed successfully!");
       router.push(`/orders/${order.id}`);
     } catch (err) {
@@ -177,7 +195,9 @@ export default function CheckoutPage() {
                       <span className="text-[var(--color-text-primary)]">
                         {item.title} x {item.quantity}
                       </span>
-                      <span className="font-medium">{formatPrice(item.priceCents * item.quantity)}</span>
+                      <span className="font-medium">
+                        {formatPrice(item.priceCents * item.quantity, item.currency ?? currency)}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -186,7 +206,14 @@ export default function CheckoutPage() {
           </div>
 
           <div className="space-y-4 lg:sticky lg:top-[calc(var(--header-height)+var(--subnav-height)+16px)] lg:self-start">
-            <CartSummary subtotalCents={subtotal} itemCount={itemCount} showCheckoutButton={false} />
+            <CartSummary
+              subtotalCents={subtotalCents}
+              taxCents={taxCents}
+              totalCents={totalCents}
+              itemCount={itemCount}
+              currency={currency}
+              showCheckoutButton={false}
+            />
             <Button
               type="submit"
               variant="amazon"

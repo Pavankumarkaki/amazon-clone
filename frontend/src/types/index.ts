@@ -13,7 +13,12 @@ export interface ProductImage {
 export interface ProductCard {
   id: string;
   title: string;
+  brand: string;
   price_cents: number;
+  mrp_cents: number | null;
+  discount_percentage: number;
+  rating: number;
+  reviews_count: number;
   currency: string;
   stock: number;
   category: Category;
@@ -23,6 +28,7 @@ export interface ProductCard {
 export interface ProductDetail extends ProductCard {
   description: string;
   specs: Record<string, string>;
+  features: string[];
 }
 
 export interface PaginatedResponse<T> {
@@ -33,12 +39,34 @@ export interface PaginatedResponse<T> {
 }
 
 export interface CartItem {
+  id?: string;
   productId: string;
   title: string;
   priceCents: number;
   quantity: number;
   imageUrl?: string;
   currency?: string;
+  stock?: number;
+}
+
+export interface ServerCartItem {
+  id: string;
+  product_id: string;
+  title: string;
+  quantity: number;
+  unit_price_cents: number;
+  line_total_cents: number;
+  image_url?: string;
+  stock: number;
+  currency: string;
+}
+
+export interface ServerCart {
+  id: string;
+  items: ServerCartItem[];
+  subtotal_cents: number;
+  tax_cents: number;
+  total_cents: number;
 }
 
 export interface CartLineItem {
@@ -54,6 +82,7 @@ export interface CartLineItem {
 export interface CartValidateResponse {
   items: CartLineItem[];
   subtotal_cents: number;
+  tax_cents: number;
   total_cents: number;
 }
 
@@ -100,4 +129,17 @@ export interface WishlistItem {
   product_id: string;
   created_at: string;
   product: ProductCard;
+}
+
+export function serverCartToLocalItems(cart: ServerCart): CartItem[] {
+  return cart.items.map((item) => ({
+    id: item.id,
+    productId: item.product_id,
+    title: item.title,
+    priceCents: item.unit_price_cents,
+    quantity: item.quantity,
+    imageUrl: item.image_url,
+    currency: item.currency || "INR",
+    stock: item.stock,
+  }));
 }

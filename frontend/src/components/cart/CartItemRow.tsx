@@ -1,10 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { Trash2 } from "lucide-react";
+import { Bookmark, ChevronDown, Trash2 } from "lucide-react";
 import { PriceTag } from "@/components/product/PriceTag";
-import { QuantityStepper } from "@/components/product/QuantityStepper";
-import { useCartStore } from "@/store/cart.store";
+import { useRemoveFromCart, useUpdateCartQuantity } from "@/hooks/useCart";
 import type { CartItem } from "@/types";
 
 interface CartItemRowProps {
@@ -12,62 +11,100 @@ interface CartItemRowProps {
 }
 
 export function CartItemRow({ item }: CartItemRowProps) {
-  const { setQuantity, removeItem } = useCartStore();
+  const updateQuantity = useUpdateCartQuantity();
+  const removeItem = useRemoveFromCart();
+  const inStock = (item.stock ?? 1) > 0;
 
   return (
-    <div className="flex gap-4 border-b border-[var(--color-border)] bg-white py-5 last:border-b-0">
+    <div className="grid gap-4 border-b border-(--color-border) py-5 last:border-b-0 sm:grid-cols-[120px_1fr_auto]">
       <Link
         href={`/products/${item.productId}`}
-        className="h-28 w-28 shrink-0 overflow-hidden rounded-sm bg-white p-2 transition-shadow hover:shadow-sm"
+        className="mx-auto h-28 w-28 shrink-0 overflow-hidden rounded-sm bg-white p-2 transition-shadow hover:shadow-sm sm:mx-0"
       >
         {item.imageUrl ? (
           <img src={item.imageUrl} alt={item.title} className="h-full w-full object-contain" />
         ) : (
-          <div className="flex h-full items-center justify-center text-xs text-[var(--color-text-muted)]">
+          <div className="flex h-full items-center justify-center text-xs text-(--color-text-muted)">
             No img
           </div>
         )}
       </Link>
 
-      <div className="flex min-w-0 flex-1 flex-col justify-between">
-        <div>
-          <Link
-            href={`/products/${item.productId}`}
-            className="line-clamp-2 text-sm text-(--color-text-primary) hover:text-(--color-text-link-hover) hover:underline"
-          >
-            {item.title}
-          </Link>
-          <div className="mt-1">
-            <span className="text-xs text-[var(--color-in-stock)]">In Stock</span>
-          </div>
-          <div className="mt-1">
-            <PriceTag cents={item.priceCents} currency={item.currency} size="md" />
-          </div>
-        </div>
+      <div className="min-w-0 space-y-2">
+        <Link
+          href={`/products/${item.productId}`}
+          className="line-clamp-2 text-sm text-(--color-text-primary) hover:text-(--color-text-link-hover) hover:underline"
+        >
+          {item.title}
+        </Link>
 
-        <div className="mt-3 flex flex-wrap items-center gap-4">
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-[var(--color-text-secondary)]">Qty:</span>
-            <QuantityStepper
+        <p className={`text-xs ${inStock ? "text-(--color-in-stock)" : "text-(--color-out-of-stock)"}`}>
+          {inStock ? "In Stock" : "Out of Stock"}
+        </p>
+
+        <p className="text-xs text-(--color-text-secondary)">
+          Sold by: <span className="text-(--color-text-primary)">Amazon Clone</span>
+        </p>
+
+        <div className="flex flex-wrap items-center gap-3 pt-1">
+          <div className="relative">
+            <label htmlFor={`qty-${item.productId}`} className="sr-only">
+              Quantity
+            </label>
+            <select
+              id={`qty-${item.productId}`}
               value={item.quantity}
-              onChange={(qty) => setQuantity(item.productId, qty)}
-            />
+              onChange={(e) =>
+                updateQuantity.mutate({ item, quantity: Number(e.target.value) })
+              }
+              className="appearance-none rounded border border-[#888C8C] bg-[#F0F2F2] py-1.5 pl-3 pr-8 text-xs shadow-sm focus:border-(--color-accent-orange) focus:outline-none"
+            >
+              {Array.from({ length: Math.min(item.stock ?? 10, 10) }, (_, i) => i + 1).map((n) => (
+                <option key={n} value={n}>
+                  Qty: {n}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-(--color-text-secondary)" />
           </div>
+
+          <span className="hidden text-(--color-border) sm:inline">|</span>
+
           <button
             type="button"
-            className="text-xs text-[var(--color-text-link)] hover:text-[var(--color-text-link-hover)] hover:underline"
-            onClick={() => removeItem(item.productId)}
+            className="text-xs text-(--color-text-link) hover:text-(--color-text-link-hover) hover:underline"
+            onClick={() => removeItem.mutate(item)}
           >
-            <span className="flex items-center gap-1">
-              <Trash2 className="h-3 w-3" />
-              Delete
-            </span>
+            Delete
+          </button>
+
+          <span className="hidden text-(--color-border) sm:inline">|</span>
+
+          <button
+            type="button"
+            className="hidden items-center gap-1 text-xs text-(--color-text-link) hover:text-(--color-text-link-hover) hover:underline sm:flex"
+          >
+            <Bookmark className="h-3 w-3" />
+            Save for later
           </button>
         </div>
+
+        <button
+          type="button"
+          className="flex items-center gap-1 text-xs text-(--color-text-link) hover:text-(--color-text-link-hover) hover:underline sm:hidden"
+        >
+          <Trash2 className="h-3 w-3" />
+          Remove
+        </button>
       </div>
 
-      <div className="shrink-0 text-right">
+      <div className="text-left sm:text-right">
         <PriceTag cents={item.priceCents * item.quantity} currency={item.currency} size="md" />
+        {item.quantity > 1 && (
+          <p className="mt-1 text-xs text-(--color-text-secondary)">
+            <PriceTag cents={item.priceCents} currency={item.currency} size="sm" /> each
+          </p>
+        )}
       </div>
     </div>
   );

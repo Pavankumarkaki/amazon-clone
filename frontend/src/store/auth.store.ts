@@ -26,6 +26,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     setAccessToken(data.access_token);
     const user = await apiClient<User>("/auth/me");
     set({ user });
+    const { mergeGuestCartToServer } = await import("@/hooks/useCart");
+    await mergeGuestCartToServer();
   },
 
   register: async (email, password, fullName) => {
@@ -51,6 +53,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       const user = await apiClient<User>("/auth/me");
       set({ user, isLoading: false });
+      const { mergeGuestCartToServer } = await import("@/hooks/useCart");
+      await mergeGuestCartToServer();
     } catch {
       setAccessToken(null);
       set({ user: null, isLoading: false });

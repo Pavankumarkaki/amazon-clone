@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatPrice } from "@/lib/utils";
+import { DEFAULT_CURRENCY, formatPrice } from "@/lib/utils";
 import { useOrder } from "@/hooks/useOrders";
 
 export default function OrderConfirmationPage() {
@@ -61,14 +61,14 @@ export default function OrderConfirmationPage() {
             {order.items.map((item) => (
               <div key={item.id} className="flex justify-between text-sm">
                 <span>Product x {item.quantity}</span>
-                <span>{formatPrice(item.unit_price_cents * item.quantity)}</span>
+                <span>{formatPrice(item.unit_price_cents * item.quantity, DEFAULT_CURRENCY)}</span>
               </div>
             ))}
           </div>
           <div className="border-t pt-4">
             <div className="flex justify-between font-semibold">
               <span>Total</span>
-              <span className="text-amber-700">{formatPrice(order.total_cents)}</span>
+              <span className="text-amber-700">{formatPrice(order.total_cents, DEFAULT_CURRENCY)}</span>
             </div>
           </div>
         </CardContent>

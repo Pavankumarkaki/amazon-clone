@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Menu } from "lucide-react";
 import { useCategories } from "@/hooks/useCategories";
+import { useMounted } from "@/hooks/useMounted";
 
 const QUICK_LINKS = [
   { label: "Today's Deals", href: "/?deals=true" },
@@ -13,6 +14,7 @@ const QUICK_LINKS = [
 ];
 
 export function SubNav() {
+  const mounted = useMounted();
   const { data: categories } = useCategories();
 
   return (
@@ -39,15 +41,16 @@ export function SubNav() {
           </Link>
         ))}
 
-        {categories?.slice(0, 4).map((cat) => (
-          <Link
-            key={cat.id}
-            href={`/?category=${cat.slug}`}
-            className="hidden shrink-0 rounded-sm px-2 py-1.5 text-sm transition-colors hover:outline hover:outline-1 hover:outline-white md:inline"
-          >
-            {cat.name}
-          </Link>
-        ))}
+        {mounted &&
+          categories?.slice(0, 4).map((cat) => (
+            <Link
+              key={cat.id}
+              href={`/?category=${cat.slug}`}
+              className="hidden shrink-0 rounded-sm px-2 py-1.5 text-sm transition-colors hover:outline hover:outline-1 hover:outline-white md:inline"
+            >
+              {cat.name}
+            </Link>
+          ))}
       </div>
     </nav>
   );

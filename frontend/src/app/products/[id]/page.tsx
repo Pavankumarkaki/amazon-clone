@@ -13,45 +13,55 @@ import { ProductImageGallery } from "@/components/product/ProductImageGallery";
 import { ProductInfoPanel } from "@/components/product/ProductInfoPanel";
 import { ProductMobileBuyBar } from "@/components/product/ProductMobileBuyBar";
 import { RelatedProductsSection } from "@/components/product/RelatedProductsSection";
+import { useAddToCart } from "@/hooks/useCart";
 import { useProduct } from "@/hooks/useProduct";
-import { useAddToWishlist, useWishlist } from "@/hooks/useWishlist";
+import {
+  useAddToWishlist,
+  useRemoveFromWishlist,
+  useWishlist,
+} from "@/hooks/useWishlist";
 import { useAuthStore } from "@/store/auth.store";
-import { useCartStore } from "@/store/cart.store";
 import type { ProductCard } from "@/types";
 
 export default function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { data: product, isLoading, error } = useProduct(id);
-  const addItem = useCartStore((s) => s.addItem);
+  const addToCart = useAddToCart();
   const user = useAuthStore((s) => s.user);
   const { data: wishlist } = useWishlist();
   const addToWishlist = useAddToWishlist();
+  const removeFromWishlist = useRemoveFromWishlist();
 
   const isWishlisted = wishlist?.some((w) => w.product_id === id);
 
-  const addProductToCart = (item: ProductCard, quantity = 1) => {
+  const addProductToCart = async (item: ProductCard, quantity = 1) => {
     if (item.stock <= 0) {
       toast.error("Out of stock");
       return;
     }
-    addItem(
-      {
-        productId: item.id,
-        title: item.title,
-        priceCents: item.price_cents,
-        currency: item.currency,
-        imageUrl: item.images[0]?.url,
-      },
-      quantity,
-    );
+    try {
+      await addToCart.mutateAsync({
+        item: {
+          productId: item.id,
+          title: item.title,
+          priceCents: item.price_cents,
+          currency: item.currency,
+          imageUrl: item.images[0]?.url,
+          stock: item.stock,
+        },
+        quantity,
+      });
+    } catch {
+      toast.error("Failed to add to cart");
+    }
   };
 
   if (isLoading) {
     return (
       <>
         <ProductBreadcrumb />
-        <div className="mx-auto max-w-[var(--container-max)] px-4 py-6">
+        <div className="mx-auto max-w-(--container-max) px-4 py-6">
           <div className="grid gap-8 lg:grid-cols-[646px_1fr_254px]">
             <Skeleton className="aspect-square w-full" />
             <div className="space-y-4">
@@ -68,8 +78,8 @@ export default function ProductDetailPage() {
 
   if (error || !product) {
     return (
-      <div className="mx-auto max-w-[var(--container-max)] px-4 py-16 text-center">
-        <h1 className="text-xl font-semibold text-[var(--color-text-primary)]">Product not found</h1>
+      <div className="mx-auto max-w-(--container-max) px-4 py-16 text-center">
+        <h1 className="text-xl font-semibold text-(--color-text-primary)">Product not found</h1>
         <Button variant="amazon" className="mt-4" onClick={() => router.push("/")}>
           Back to Products
         </Button>
@@ -79,35 +89,36 @@ export default function ProductDetailPage() {
 
   const images = product.images.map((img) => img.url);
 
-  const handleAddToCart = (quantity = 1) => {
-    addProductToCart(product, quantity);
+  const handleAddToCart = async (quantity = 1) => {
+    await addProductToCart(product, quantity);
     toast.success(quantity > 1 ? `Added ${quantity} items to cart` : "Added to cart");
   };
 
-  const handleBuyNow = (quantity = 1) => {
-    handleAddToCart(quantity);
+  const handleBuyNow = async (quantity = 1) => {
+    await handleAddToCart(quantity);
     router.push("/checkout");
   };
 
-  const handleAddToList = async () => {
+  const handleToggleWishlist = async () => {
     if (!user) {
       router.push("/login");
       return;
     }
-    if (isWishlisted) {
-      toast.info("Already in your wishlist");
-      return;
-    }
     try {
-      await addToWishlist.mutateAsync(product.id);
-      toast.success("Added to list");
+      if (isWishlisted) {
+        await removeFromWishlist.mutateAsync(product.id);
+        toast.success("Removed from wishlist");
+      } else {
+        await addToWishlist.mutateAsync(product.id);
+        toast.success("Added to wishlist");
+      }
     } catch {
-      toast.error("Failed to add to list");
+      toast.error("Failed to update wishlist");
     }
   };
 
-  const handleRelatedAddToCart = (item: ProductCard) => {
-    addProductToCart(item);
+  const handleRelatedAddToCart = async (item: ProductCard) => {
+    await addProductToCart(item);
     toast.success("Added to cart");
   };
 
@@ -116,23 +127,31 @@ export default function ProductDetailPage() {
       <ProductBreadcrumb categorySlug={product.category.slug} productTitle={product.title} />
 
       <div className="bg-white pb-24 lg:pb-6">
-        <div className="mx-auto max-w-[var(--container-max)] px-4 py-4 lg:py-6">
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[646px_1fr_254px] lg:gap-8">
-            <div className="order-1 overflow-visible">
-              <ProductImageGallery images={images} alt={product.title} />
+        <div className="mx-auto max-w-(--container-max) px-2 py-4 sm:px-4 lg:py-6">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,646px)_1fr_254px] lg:gap-8">
+            <div className="order-1 min-w-0 overflow-visible">
+              <ProductImageGallery
+                product={product}
+                images={images}
+                alt={product.title}
+                isWishlisted={isWishlisted}
+                onToggleWishlist={handleToggleWishlist}
+                wishlistLoading={addToWishlist.isPending || removeFromWishlist.isPending}
+              />
             </div>
 
-            <div className="order-2">
+            <div className="order-2 min-w-0">
               <ProductInfoPanel product={product} />
             </div>
 
-            <div className="order-3">
+            <div className="order-3 min-w-0">
               <div className="hidden lg:block">
                 <ProductBuyBox
                   product={product}
                   onAddToCart={handleAddToCart}
                   onBuyNow={handleBuyNow}
-                  onAddToList={handleAddToList}
+                  onAddToList={handleToggleWishlist}
+                  isWishlisted={isWishlisted}
                 />
               </div>
 
@@ -141,7 +160,8 @@ export default function ProductDetailPage() {
                   product={product}
                   onAddToCart={handleAddToCart}
                   onBuyNow={handleBuyNow}
-                  onAddToList={handleAddToList}
+                  onAddToList={handleToggleWishlist}
+                  isWishlisted={isWishlisted}
                   sticky={false}
                 />
               </div>
@@ -152,16 +172,12 @@ export default function ProductDetailPage() {
         <ProductDescriptionSection product={product} />
         <ProductExtendedDetails product={product} />
         <div id="customer-reviews">
-          <CustomerReviewsSection productId={product.id} />
+          <CustomerReviewsSection product={product} />
         </div>
         <RelatedProductsSection product={product} onAddToCart={handleRelatedAddToCart} />
       </div>
 
-      <ProductMobileBuyBar
-        product={product}
-        onAddToCart={handleAddToCart}
-        onBuyNow={handleBuyNow}
-      />
+      <ProductMobileBuyBar product={product} onAddToCart={handleAddToCart} onBuyNow={handleBuyNow} />
     </>
   );
 }

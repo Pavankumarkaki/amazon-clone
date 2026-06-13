@@ -14,7 +14,7 @@ interface ProductMobileBuyBarProps {
 export function ProductMobileBuyBar({ product, onAddToCart, onBuyNow }: ProductMobileBuyBarProps) {
   const [quantity, setQuantity] = useState(1);
   const isOutOfStock = product.stock <= 0;
-  const pricing = getProductPricing(product.id, product.price_cents);
+  const pricing = getProductPricing(product);
 
   return (
     <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--color-border)] bg-white p-3 shadow-[var(--shadow-drawer)] md:hidden">

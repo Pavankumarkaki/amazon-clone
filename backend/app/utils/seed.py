@@ -1,5 +1,8 @@
 import asyncio
+from collections import defaultdict
+from typing import Any
 
+import httpx
 from sqlalchemy import select
 
 from app.core.db import async_session_factory
@@ -8,201 +11,270 @@ from app.models.category import Category
 from app.models.product import Product, ProductImage
 from app.models.user import User
 
+DUMMYJSON_BASE = "https://dummyjson.com"
+USD_TO_INR = 83
+MIN_PRODUCTS_PER_CATEGORY = 6
+
 CATEGORIES = [
     ("Electronics", "electronics"),
-    ("Books", "books"),
-    ("Home & Kitchen", "home-kitchen"),
+    ("Mobiles", "mobiles"),
+    ("Computers", "computers"),
     ("Fashion", "fashion"),
+    ("Home & Kitchen", "home-kitchen"),
+    ("Books", "books"),
+    ("Beauty", "beauty"),
     ("Sports", "sports"),
+    ("Toys", "toys"),
+    ("Appliances", "appliances"),
 ]
 
-PRODUCTS = [
-    {
-        "title": "Wireless Bluetooth Headphones",
-        "description": "Premium over-ear headphones with active noise cancellation, 30-hour battery life, and crystal-clear audio quality.",
-        "price_cents": 7999,
-        "stock": 50,
-        "category": "electronics",
-        "specs": {"Brand": "SoundMax", "Battery": "30 hours", "Connectivity": "Bluetooth 5.3", "Weight": "250g"},
-        "images": [
-            "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600",
-            "https://images.unsplash.com/photo-1484704849700-f032a568e944?w=600",
-        ],
-    },
-    {
-        "title": "4K Ultra HD Smart TV 55 inch",
-        "description": "Stunning 4K resolution with HDR support, built-in streaming apps, and voice control.",
-        "price_cents": 49999,
-        "stock": 20,
-        "category": "electronics",
-        "specs": {"Screen": "55 inch", "Resolution": "4K UHD", "HDR": "Dolby Vision", "Smart": "Yes"},
-        "images": ["https://images.unsplash.com/photo-1593359672873-a7850647df70?w=600"],
-    },
-    {
-        "title": "Mechanical Gaming Keyboard RGB",
-        "description": "Tactile mechanical switches with customizable RGB backlighting for the ultimate gaming experience.",
-        "price_cents": 12999,
-        "stock": 35,
-        "category": "electronics",
-        "specs": {"Switch": "Cherry MX Red", "Layout": "Full-size", "Backlight": "RGB", "Connection": "USB-C"},
-        "images": ["https://images.unsplash.com/photo-1704225618883-c7847102e6d4?w=500",
-                    "https://images.unsplash.com/photo-1648860694064-03e6d6ee87f2?w=500"
-            ],
-    },
-    {
-        "title": "Wireless Mouse Ergonomic",
-        "description": "Comfortable ergonomic design with precision tracking and long battery life.",
-        "price_cents": 2999,
-        "stock": 100,
-        "category": "electronics",
-        "specs": {"DPI": "16000", "Buttons": "6", "Battery": "70 days", "Connection": "2.4GHz + Bluetooth"},
-        "images": ["https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=600"],
-    },
-    {
-        "title": "Portable Bluetooth Speaker",
-        "description": "Waterproof portable speaker with 360-degree sound and 12-hour playtime.",
-        "price_cents": 5999,
-        "stock": 60,
-        "category": "electronics",
-        "specs": {"Waterproof": "IPX7", "Battery": "12 hours", "Power": "20W", "Weight": "540g"},
-        "images": ["https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=600"],
-    },
-    {
-        "title": "The Pragmatic Programmer",
-        "description": "Your journey to mastery. A classic guide for software developers at every level.",
-        "price_cents": 3999,
-        "stock": 80,
-        "category": "books",
-        "specs": {"Author": "David Thomas & Andrew Hunt", "Pages": "352", "Publisher": "Addison-Wesley", "Edition": "20th Anniversary"},
-        "images": ["https://images.unsplash.com/photo-1532012197260-da84d127e765?w=600"],
-    },
-    {
-        "title": "Clean Code: A Handbook",
-        "description": "Learn to write clean, maintainable code that any developer can understand.",
-        "price_cents": 3499,
-        "stock": 75,
-        "category": "books",
-        "specs": {"Author": "Robert C. Martin", "Pages": "464", "Publisher": "Prentice Hall", "Language": "English"},
-        "images": ["https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=600"],
-    },
-    {
-        "title": "Designing Data-Intensive Applications",
-        "description": "The big ideas behind reliable, scalable, and maintainable systems.",
-        "price_cents": 4499,
-        "stock": 45,
-        "category": "books",
-        "specs": {"Author": "Martin Kleppmann", "Pages": "616", "Publisher": "O'Reilly", "Language": "English"},
-        "images": ["https://images.unsplash.com/photo-1589998059174-4d0fa4a2a930?w=600"],
-    },
-    {
-        "title": "Atomic Habits",
-        "description": "An easy and proven way to build good habits and break bad ones.",
-        "price_cents": 1599,
-        "stock": 120,
-        "category": "books",
-        "specs": {"Author": "James Clear", "Pages": "320", "Publisher": "Avery", "Language": "English"},
-        "images": ["https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=600"],
-    },
-    {
-        "title": "Stainless Steel Cookware Set 10-Piece",
-        "description": "Professional-grade stainless steel cookware set with even heat distribution.",
-        "price_cents": 19999,
-        "stock": 25,
-        "category": "home-kitchen",
-        "specs": {"Material": "18/10 Stainless Steel", "Pieces": "10", "Oven Safe": "500°F", "Dishwasher Safe": "Yes"},
-        "images": ["https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600"],
-    },
-    {
-        "title": "Programmable Coffee Maker",
-        "description": "Brew the perfect cup with 24-hour programmable timer and thermal carafe.",
-        "price_cents": 8999,
-        "stock": 40,
-        "category": "home-kitchen",
-        "specs": {"Capacity": "12 cups", "Timer": "24-hour", "Carafe": "Thermal", "Filter": "Permanent gold-tone"},
-        "images": ["https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=600"],
-    },
-    {
-        "title": "Air Fryer 6 Quart",
-        "description": "Healthy cooking with 85% less fat. 8 preset cooking functions.",
-        "price_cents": 11999,
-        "stock": 30,
-        "category": "home-kitchen",
-        "specs": {"Capacity": "6 Quart", "Power": "1700W", "Presets": "8", "Temperature": "180-400°F"},
-        "images": ["https://images.unsplash.com/photo-1585515320310-259814833e62?w=600"],
-    },
-    {
-        "title": "Men's Classic Fit Dress Shirt",
-        "description": "Wrinkle-resistant cotton blend dress shirt for professional and casual wear.",
-        "price_cents": 3499,
-        "stock": 90,
-        "category": "fashion",
-        "specs": {"Material": "60% Cotton, 40% Polyester", "Fit": "Classic", "Care": "Machine Wash", "Collar": "Spread"},
-        "images": ["https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=600"],
-    },
-    {
-        "title": "Women's Running Shoes",
-        "description": "Lightweight running shoes with responsive cushioning and breathable mesh upper.",
-        "price_cents": 8999,
-        "stock": 55,
-        "category": "fashion",
-        "specs": {"Type": "Running", "Sole": "Rubber", "Upper": "Mesh", "Weight": "220g"},
-        "images": ["https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600"],
-    },
-    {
-        "title": "Leather Crossbody Bag",
-        "description": "Genuine leather crossbody bag with adjustable strap and multiple compartments.",
-        "price_cents": 5999,
-        "stock": 40,
-        "category": "fashion",
-        "specs": {"Material": "Genuine Leather", "Dimensions": "10x8x3 in", "Strap": "Adjustable", "Color": "Brown"},
-        "images": ["https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=600"],
-    },
-    {
-        "title": "Yoga Mat Premium 6mm",
-        "description": "Non-slip yoga mat with alignment lines and carrying strap included.",
-        "price_cents": 2999,
-        "stock": 70,
-        "category": "sports",
-        "specs": {"Thickness": "6mm", "Material": "TPE", "Size": "72x24 in", "Weight": "2.5 lbs"},
-        "images": ["https://images.unsplash.com/photo-1601925260368-ae2f83cf8b7f?w=600"],
-    },
-    {
-        "title": "Adjustable Dumbbell Set 20kg",
-        "description": "Space-saving adjustable dumbbells from 2.5kg to 20kg per hand.",
-        "price_cents": 24999,
-        "stock": 15,
-        "category": "sports",
-        "specs": {"Weight Range": "2.5-20kg", "Material": "Steel", "Adjustment": "Quick-dial", "Pairs": "1"},
-        "images": ["https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=600"],
-    },
-    {
-        "title": "Camping Tent 4-Person",
-        "description": "Waterproof 4-person tent with easy setup and ventilation windows.",
-        "price_cents": 15999,
-        "stock": 20,
-        "category": "sports",
-        "specs": {"Capacity": "4 Person", "Waterproof": "3000mm", "Setup": "5 minutes", "Weight": "8.5 lbs"},
-        "images": ["https://images.unsplash.com/photo-1478131338917-66046c5b7025?w=600"],
-    },
-    {
-        "title": "Smart Watch Fitness Tracker",
-        "description": "Track your health with heart rate monitor, GPS, and 7-day battery life.",
-        "price_cents": 19999,
-        "stock": 45,
-        "category": "electronics",
-        "specs": {"Display": "1.4 inch AMOLED", "Battery": "7 days", "GPS": "Built-in", "Water Resistant": "5ATM"},
-        "images": ["https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600"],
-    },
-    {
-        "title": "USB-C Laptop Charger 65W",
-        "description": "Compact GaN charger compatible with MacBook, Dell, and other USB-C laptops.",
-        "price_cents": 3999,
-        "stock": 85,
-        "category": "electronics",
-        "specs": {"Power": "65W", "Ports": "2 USB-C", "Technology": "GaN", "Weight": "120g"},
-        "images": ["https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=600"],
-    },
-]
+# Maps DummyJSON category slugs to our local category slugs.
+DUMMYJSON_CATEGORY_MAP: dict[str, str] = {
+    "smartphones": "mobiles",
+    "tablets": "mobiles",
+    "laptops": "computers",
+    "mobile-accessories": "electronics",
+    "mens-watches": "electronics",
+    "womens-watches": "electronics",
+    "mens-shirts": "fashion",
+    "mens-shoes": "fashion",
+    "womens-dresses": "fashion",
+    "womens-shoes": "fashion",
+    "tops": "fashion",
+    "womens-bags": "fashion",
+    "womens-jewellery": "fashion",
+    "sunglasses": "fashion",
+    "kitchen-accessories": "home-kitchen",
+    "home-decoration": "home-kitchen",
+    "groceries": "home-kitchen",
+    "furniture": "appliances",
+    "beauty": "beauty",
+    "fragrances": "beauty",
+    "skin-care": "beauty",
+    "sports-accessories": "sports",
+    "motorcycle": "sports",
+    "vehicle": "appliances",
+}
+
+# Used to fill categories that DummyJSON does not provide directly.
+SYNTHETIC_CATEGORY_PREFIXES: dict[str, str] = {
+    "books": "Bestselling Illustrated Edition",
+    "toys": "Fun Educational Playset",
+}
+
+SPEC_TEMPLATES: dict[str, dict[str, str]] = {
+    "electronics": {"Connectivity": "Bluetooth 5.3", "Battery": "30 hours", "Weight": "250g", "Warranty": "1 Year"},
+    "mobiles": {"RAM": "8GB", "Storage": "128GB", "Display": "6.5 inch AMOLED", "Battery": "5000mAh"},
+    "computers": {"Interface": "USB-C", "Compatibility": "Windows/Mac", "Warranty": "1 Year", "Color": "Black"},
+    "fashion": {"Material": "Cotton Blend", "Fit": "Regular", "Care": "Machine Wash", "Origin": "India"},
+    "home-kitchen": {"Material": "Stainless Steel", "Dishwasher Safe": "Yes", "Warranty": "2 Years", "Origin": "India"},
+    "books": {"Language": "English", "Format": "Paperback", "Publisher": "Premium Press", "Pages": "320"},
+    "beauty": {"Skin Type": "All", "Volume": "100ml", "Paraben Free": "Yes", "Cruelty Free": "Yes"},
+    "sports": {"Material": "High Grade", "Usage": "Indoor/Outdoor", "Warranty": "6 Months", "Color": "Multi"},
+    "toys": {"Age Group": "3+ Years", "Material": "Non-toxic Plastic", "Battery": "Included", "Pieces": "1"},
+    "appliances": {"Energy Rating": "5 Star", "Voltage": "230V", "Warranty": "2 Years", "Color": "Silver"},
+}
+
+
+def _enrich_title(item: dict[str, Any], category_slug: str) -> str:
+    brand = item.get("brand") or "Premium"
+    title = item.get("title") or "Product"
+    prefix = SYNTHETIC_CATEGORY_PREFIXES.get(category_slug, "")
+    category_label = category_slug.replace("-", " ").title()
+
+    candidates = [
+        f"{brand} {title} {prefix}".strip(),
+        f"{brand} {title} Premium {category_label} with Advanced Features and Reliable Quality",
+        f"{brand} {title} Original Authentic {category_label} for Everyday Premium Performance",
+    ]
+
+    for candidate in candidates:
+        if len(candidate.split()) >= 10:
+            return candidate
+
+    return f"{brand} {title} Premium Quality Original Authentic Product with Advanced Features"
+
+
+def _enrich_description(item: dict[str, Any], category_slug: str) -> str:
+    brand = item.get("brand") or "Premium"
+    title = item.get("title") or "this product"
+    base = item.get("description") or f"The {title} is a quality {category_slug.replace('-', ' ')} product."
+    warranty = item.get("warrantyInformation") or "Standard manufacturer warranty included"
+    shipping = item.get("shippingInformation") or "Ships within 3-5 business days"
+    return_policy = item.get("returnPolicy") or "Easy return policy available"
+    availability = item.get("availabilityStatus") or "In Stock"
+
+    lines = [
+        base,
+        f"Discover the {brand} {title}, thoughtfully designed to deliver premium quality and reliable performance for modern lifestyles.",
+        f"Availability status: {availability}. Every unit is quality-checked before dispatch to ensure you receive a genuine product.",
+        f"Warranty coverage: {warranty}. {shipping}.",
+        f"Shop with confidence — {return_policy}. Backed by {brand} customer support and secure packaging for safe delivery.",
+    ]
+    return "\n\n".join(lines)
+
+
+def _build_features(item: dict[str, Any]) -> list[str]:
+    features: list[str] = []
+
+    tags = item.get("tags") or []
+    if tags:
+        features.append(f"Tagged for easy discovery: {', '.join(tags)}")
+
+    for key, label in (
+        ("warrantyInformation", "Warranty"),
+        ("shippingInformation", "Shipping"),
+        ("returnPolicy", "Returns"),
+        ("availabilityStatus", "Availability"),
+    ):
+        value = item.get(key)
+        if value:
+            features.append(f"{label}: {value}")
+
+    dimensions = item.get("dimensions") or {}
+    if dimensions:
+        features.append(
+            "Dimensions (W x H x D): "
+            f"{dimensions.get('width', 'N/A')} x {dimensions.get('height', 'N/A')} x {dimensions.get('depth', 'N/A')} cm"
+        )
+
+    weight = item.get("weight")
+    if weight is not None:
+        features.append(f"Weight: {weight} kg")
+
+    sku = item.get("sku")
+    if sku:
+        features.append(f"SKU: {sku}")
+
+    minimum_order = item.get("minimumOrderQuantity")
+    if minimum_order:
+        features.append(f"Minimum order quantity: {minimum_order}")
+
+    if len(features) < 5:
+        brand = item.get("brand") or "Premium"
+        title = item.get("title") or "product"
+        features.extend(
+            [
+                f"Authentic {brand} {title} sourced for quality and durability",
+                "Highly rated by customers on the Amazon Clone marketplace",
+                "Fast delivery eligible on qualifying orders across India",
+            ]
+        )
+
+    return features[: max(5, len(features))]
+
+
+def _build_specs(item: dict[str, Any], category_slug: str) -> dict[str, Any]:
+    specs: dict[str, Any] = dict(SPEC_TEMPLATES.get(category_slug, {}))
+    brand = item.get("brand")
+    if brand:
+        specs["Brand"] = brand
+
+    if item.get("sku"):
+        specs["SKU"] = item["sku"]
+    if item.get("weight") is not None:
+        specs["Weight"] = f"{item['weight']} kg"
+
+    dimensions = item.get("dimensions") or {}
+    if dimensions:
+        specs["Dimensions"] = (
+            f"{dimensions.get('width', 'N/A')} x {dimensions.get('height', 'N/A')} x {dimensions.get('depth', 'N/A')} cm"
+        )
+
+    if item.get("warrantyInformation"):
+        specs["Warranty"] = item["warrantyInformation"]
+    if item.get("shippingInformation"):
+        specs["Shipping"] = item["shippingInformation"]
+    if item.get("returnPolicy"):
+        specs["Return Policy"] = item["returnPolicy"]
+
+    return specs
+
+
+def _build_images(item: dict[str, Any]) -> list[str]:
+    images = [url for url in (item.get("images") or []) if url]
+    thumbnail = item.get("thumbnail")
+    if thumbnail and thumbnail not in images:
+        images.insert(0, thumbnail)
+    return images or ([thumbnail] if thumbnail else [])
+
+
+def _transform_product(item: dict[str, Any], category_slug: str) -> dict[str, Any]:
+    price_usd = float(item.get("price") or 0)
+    price_cents = int(round(price_usd * USD_TO_INR * 100))
+    discount = int(round(float(item.get("discountPercentage") or 0)))
+    mrp_cents = round(price_cents / (1 - discount / 100)) if 0 < discount < 100 else price_cents
+    reviews = item.get("reviews") or []
+
+    return {
+        "title": _enrich_title(item, category_slug),
+        "brand": item.get("brand") or "",
+        "description": _enrich_description(item, category_slug),
+        "price_cents": max(price_cents, 99),
+        "mrp_cents": max(mrp_cents, price_cents),
+        "discount_percentage": discount,
+        "rating": round(float(item.get("rating") or 4.0), 1),
+        "reviews_count": max(len(reviews) * 150, 120),
+        "stock": int(item.get("stock") or 0),
+        "category": category_slug,
+        "specs": _build_specs(item, category_slug),
+        "features": _build_features(item),
+        "images": _build_images(item),
+    }
+
+
+def _clone_for_category(product: dict[str, Any], category_slug: str, variant: int) -> dict[str, Any]:
+    cloned = dict(product)
+    cloned["category"] = category_slug
+    cloned["title"] = f"{product['title']} {SYNTHETIC_CATEGORY_PREFIXES.get(category_slug, 'Special Edition')} Variant {variant + 1}"
+    cloned["specs"] = dict(SPEC_TEMPLATES.get(category_slug, {}))
+    cloned["specs"]["Brand"] = product.get("brand") or "Premium"
+    return cloned
+
+
+def _balance_categories(products: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    by_category: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for product in products:
+        by_category[product["category"]].append(product)
+
+    all_slugs = [slug for _, slug in CATEGORIES]
+    pool = list(products)
+
+    for slug in all_slugs:
+        while len(by_category[slug]) < MIN_PRODUCTS_PER_CATEGORY and pool:
+            source = pool[len(by_category[slug]) % len(pool)]
+            variant = len(by_category[slug])
+            by_category[slug].append(_clone_for_category(source, slug, variant))
+
+    balanced: list[dict[str, Any]] = []
+    for slug in all_slugs:
+        balanced.extend(by_category[slug])
+    return balanced
+
+
+async def fetch_products_from_api() -> list[dict[str, Any]]:
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        response = await client.get(f"{DUMMYJSON_BASE}/products", params={"limit": 0})
+        response.raise_for_status()
+        payload = response.json()
+
+    products: list[dict[str, Any]] = []
+    for item in payload.get("products", []):
+        api_category = item.get("category", "")
+        local_category = DUMMYJSON_CATEGORY_MAP.get(api_category)
+        if not local_category:
+            continue
+
+        images = _build_images(item)
+        if not images:
+            continue
+
+        products.append(_transform_product(item, local_category))
+
+    if not products:
+        raise RuntimeError("No products fetched from DummyJSON API")
+
+    return _balance_categories(products)
 
 
 async def seed() -> None:
@@ -212,6 +284,9 @@ async def seed() -> None:
             print("Database already seeded. Skipping.")
             return
 
+        print("Fetching products from DummyJSON API...")
+        products = await fetch_products_from_api()
+
         category_map: dict[str, Category] = {}
         for name, slug in CATEGORIES:
             cat = Category(name=name, slug=slug)
@@ -220,14 +295,21 @@ async def seed() -> None:
 
         await session.flush()
 
-        for data in PRODUCTS:
+        for data in products:
             product = Product(
                 title=data["title"],
+                brand=data["brand"],
                 description=data["description"],
                 price_cents=data["price_cents"],
+                mrp_cents=data["mrp_cents"],
+                discount_percentage=data["discount_percentage"],
+                rating=data["rating"],
+                reviews_count=data["reviews_count"],
                 stock=data["stock"],
                 category_id=category_map[data["category"]].id,
                 specs=data["specs"],
+                features=data["features"],
+                currency="INR",
             )
             session.add(product)
             await session.flush()
@@ -243,7 +325,7 @@ async def seed() -> None:
         session.add(demo_user)
 
         await session.commit()
-        print(f"Seeded {len(CATEGORIES)} categories, {len(PRODUCTS)} products, and 1 demo user.")
+        print(f"Seeded {len(CATEGORIES)} categories, {len(products)} products, and 1 demo user.")
 
 
 if __name__ == "__main__":

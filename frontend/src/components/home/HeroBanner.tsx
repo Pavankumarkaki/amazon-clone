@@ -23,7 +23,7 @@ const HERO_SLIDES = [
   {
     id: 3,
     title: "Free Delivery",
-    subtitle: "On orders over $25 — limited time offer",
+    subtitle: "On orders over ₹499 — limited time offer",
     gradient: "from-[#C7511F] via-[#A9441A] to-[#232F3E]",
     accent: "Start shopping",
   },

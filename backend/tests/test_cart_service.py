@@ -28,7 +28,8 @@ async def test_validate_success(sample_product, db_session):
     service = CartService(db_session)
     result = await service.validate([CartItemInput(product_id=sample_product.id, quantity=2)])
     assert result.subtotal_cents == 2000
-    assert result.total_cents == 2000
+    assert result.tax_cents == 360
+    assert result.total_cents == 2360
     assert len(result.items) == 1
     assert result.items[0].quantity == 2
 

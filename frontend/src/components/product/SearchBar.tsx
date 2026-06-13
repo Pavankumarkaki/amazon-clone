@@ -5,12 +5,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useDebounce } from "use-debounce";
 import { useCategories } from "@/hooks/useCategories";
+import { useMounted } from "@/hooks/useMounted";
 
 export function SearchBar() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const searchParamsRef = useRef(searchParams.toString());
   searchParamsRef.current = searchParams.toString();
+  const mounted = useMounted();
   const { data: categories } = useCategories();
 
   const [query, setQuery] = useState(searchParams.get("search") || "");
@@ -71,11 +73,12 @@ export function SearchBar() {
         aria-label="Search category"
       >
         <option value="">All</option>
-        {categories?.map((cat) => (
-          <option key={cat.id} value={cat.slug}>
-            {cat.name}
-          </option>
-        ))}
+        {mounted &&
+          categories?.map((cat) => (
+            <option key={cat.id} value={cat.slug}>
+              {cat.name}
+            </option>
+          ))}
       </select>
 
       <input

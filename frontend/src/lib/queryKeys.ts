@@ -7,6 +7,9 @@ export const queryKeys = {
   categories: {
     all: ["categories"] as const,
   },
+  cart: {
+    all: ["cart"] as const,
+  },
   orders: {
     all: ["orders"] as const,
     detail: (id: string) => ["orders", "detail", id] as const,

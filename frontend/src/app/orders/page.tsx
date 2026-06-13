@@ -6,7 +6,7 @@ import { useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatPrice } from "@/lib/utils";
+import { DEFAULT_CURRENCY, formatPrice } from "@/lib/utils";
 import { useOrders } from "@/hooks/useOrders";
 import { useAuthStore } from "@/store/auth.store";
 
@@ -64,7 +64,7 @@ export default function OrdersPage() {
                   <p className="text-sm text-gray-600">{order.items.length} item(s)</p>
                 </div>
                 <div className="text-right">
-                  <p className="font-semibold text-amber-700">{formatPrice(order.total_cents)}</p>
+                  <p className="font-semibold text-amber-700">{formatPrice(order.total_cents, DEFAULT_CURRENCY)}</p>
                   <Badge variant="secondary" className="mt-1 capitalize">
                     {order.status}
                   </Badge>

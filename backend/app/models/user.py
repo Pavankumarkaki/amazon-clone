@@ -18,8 +18,10 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     orders: Mapped[list["Order"]] = relationship("Order", back_populates="user")
-    wishlist_items: Mapped[list["WishlistItem"]] = relationship("WishlistItem", back_populates="user")
+    cart: Mapped["Cart | None"] = relationship("Cart", back_populates="user", uselist=False)
+    wishlist: Mapped["Wishlist | None"] = relationship("Wishlist", back_populates="user", uselist=False)
 
 
+from app.models.cart import Cart  # noqa: E402
 from app.models.order import Order  # noqa: E402
-from app.models.wishlist import WishlistItem  # noqa: E402
+from app.models.wishlist import Wishlist  # noqa: E402

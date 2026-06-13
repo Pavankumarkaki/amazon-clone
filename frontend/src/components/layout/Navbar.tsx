@@ -5,13 +5,13 @@ import Link from "next/link";
 import { Suspense, useEffect, useState } from "react";
 import { MapPin, ShoppingCart } from "lucide-react";
 import { SearchBar } from "@/components/product/SearchBar";
+import { useCartTotals } from "@/hooks/useCart";
 import { useAuthStore } from "@/store/auth.store";
-import { useCartStore } from "@/store/cart.store";
 import { useUIStore } from "@/store/ui.store";
 
 export function Navbar() {
   const [mounted, setMounted] = useState(false);
-  const itemCount = useCartStore((s) => s.getItemCount());
+  const { itemCount } = useCartTotals();
   const openCart = useUIStore((s) => s.openCart);
   const user = useAuthStore((s) => s.user);
 

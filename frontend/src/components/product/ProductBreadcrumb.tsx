@@ -3,6 +3,7 @@
 import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { useCategories } from "@/hooks/useCategories";
+import { useMounted } from "@/hooks/useMounted";
 
 interface ProductBreadcrumbProps {
   categorySlug?: string;
@@ -10,8 +11,9 @@ interface ProductBreadcrumbProps {
 }
 
 export function ProductBreadcrumb({ categorySlug, productTitle }: ProductBreadcrumbProps) {
+  const mounted = useMounted();
   const { data: categories } = useCategories();
-  const category = categories?.find((c) => c.slug === categorySlug);
+  const category = mounted ? categories?.find((c) => c.slug === categorySlug) : undefined;
 
   const crumbs = [
     { label: "Home", href: "/" },

@@ -26,8 +26,8 @@ export function HomeSection({
         className,
       )}
     >
-      <div className={cn("flex items-baseline justify-between", !noPadding && "mb-4")}>
-        <h2 className="text-xl font-bold text-[var(--color-text-primary)]">{title}</h2>
+      <div className={cn("flex items-baseline justify-between", !noPadding && "mb-4", "p-2")}>
+        <h2 className="text-xl font-bold text-(--color-text-primary)">{title}</h2>
         {href && (
           <Link href={href} className="amazon-link text-sm font-medium">
             {linkText}

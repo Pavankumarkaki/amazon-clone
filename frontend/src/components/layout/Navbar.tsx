@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Suspense, useEffect, useState } from "react";
 import { MapPin, ShoppingCart } from "lucide-react";
 import { SearchBar } from "@/components/product/SearchBar";
+import { AccountDropdown } from "@/components/layout/AccountDropdown";
 import { useCartTotals } from "@/hooks/useCart";
 import { useAuthStore } from "@/store/auth.store";
 import { useUIStore } from "@/store/ui.store";
@@ -18,8 +19,8 @@ export function Navbar() {
   useEffect(() => setMounted(true), []);
 
   return (
-    <header className="sticky top-0 z-50 bg-amazon-header text-white">
-      <div className="mx-auto flex max-w-(--container-max) flex-wrap items-center gap-x-2 gap-y-2 px-2 py-2 sm:gap-x-3 sm:px-4">
+    <header className="sticky top-0 z-50 w-full overflow-x-clip bg-amazon-header text-white">
+      <div className="mx-auto flex w-full min-w-0 max-w-(--container-max) flex-wrap items-center gap-x-2 gap-y-2 px-2 py-2 sm:gap-x-3 sm:px-4">
         <Link
           href="/"
           className="flex shrink-0 items-center rounded-sm p-1 transition-colors hover:outline hover:outline-white"
@@ -30,7 +31,7 @@ export function Navbar() {
             alt="Amazon"
             width={100}
             height={30}
-            className="h-[30px] w-[100px] object-contain object-left"
+            className="h-[26px] w-[82px] object-contain object-left sm:h-[30px] sm:w-[100px]"
             priority
           />
         </Link>
@@ -48,7 +49,7 @@ export function Navbar() {
           </div>
         </button>
 
-        <div className="order-3 w-full min-w-0 flex-1 sm:order-0">
+        <div className="order-3 min-w-0 flex-[1_1_100%] md:order-0 md:flex-[1_1_0%]">
           <Suspense
             fallback={
               <div className="h-(--search-height) w-full rounded-sm bg-amazon-subnav" />
@@ -59,7 +60,7 @@ export function Navbar() {
         </div>
 
         <div className="ml-auto flex shrink-0 items-center gap-0.5 sm:gap-1">
-          {user ? (
+          {user && (
             <>
               <Link
                 href="/orders"
@@ -75,27 +76,14 @@ export function Navbar() {
                 <span className="block text-[11px]">Your</span>
                 <span className="block text-sm font-bold">Wishlist</span>
               </Link>
-              <Link
-                href="/orders"
-                className="rounded-sm px-2 py-1 transition-colors hover:outline-1 hover:outline-white"
-              >
-                <span className="block text-[11px]">Hello, {user.full_name.split(" ")[0]}</span>
-                <span className="block text-sm font-bold">Account &amp; Lists</span>
-              </Link>
             </>
-          ) : (
-            <Link
-              href="/login"
-              className="rounded-sm px-2 py-1 transition-colors hover:outline hover:outline-white"
-            >
-              <span className="block text-[11px]">Hello, sign in</span>
-              <span className="block text-sm font-bold">Account &amp; Lists</span>
-            </Link>
           )}
+
+          <AccountDropdown />
 
           <button
             type="button"
-            className="relative flex items-end gap-1 rounded-sm px-2 py-1 transition-colors hover:outline  hover:outline-white"
+            className="relative flex shrink-0 items-end gap-1 rounded-sm px-1 py-1 transition-colors hover:outline hover:outline-white sm:px-2"
             onClick={openCart}
             aria-label={`Cart with ${mounted ? itemCount : 0} items`}
           >

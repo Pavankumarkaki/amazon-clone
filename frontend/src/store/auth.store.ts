@@ -1,5 +1,7 @@
 import { create } from "zustand";
 import { apiClient, setAccessToken } from "@/lib/apiClient";
+import { getQueryClient } from "@/lib/queryClientRegistry";
+import { queryKeys } from "@/lib/queryKeys";
 import type { TokenResponse, User } from "@/types";
 
 interface AuthState {
@@ -25,9 +27,9 @@ export const useAuthStore = create<AuthState>((set) => ({
     });
     setAccessToken(data.access_token);
     const user = await apiClient<User>("/auth/me");
-    set({ user });
     const { mergeGuestCartToServer } = await import("@/hooks/useCart");
     await mergeGuestCartToServer();
+    set({ user });
   },
 
   register: async (email, password, fullName) => {
@@ -46,15 +48,16 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
     setAccessToken(null);
     set({ user: null });
+    getQueryClient()?.removeQueries({ queryKey: queryKeys.cart.all });
   },
 
   fetchMe: async () => {
     set({ isLoading: true });
     try {
       const user = await apiClient<User>("/auth/me");
-      set({ user, isLoading: false });
       const { mergeGuestCartToServer } = await import("@/hooks/useCart");
       await mergeGuestCartToServer();
+      set({ user, isLoading: false });
     } catch {
       setAccessToken(null);
       set({ user: null, isLoading: false });

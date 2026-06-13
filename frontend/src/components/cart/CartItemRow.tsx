@@ -1,9 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Bookmark, ChevronDown, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { PriceTag } from "@/components/product/PriceTag";
 import { useRemoveFromCart, useUpdateCartQuantity } from "@/hooks/useCart";
+import { LoginRequiredError, useSaveForLater } from "@/hooks/useWishlist";
 import type { CartItem } from "@/types";
 
 interface CartItemRowProps {
@@ -11,9 +14,37 @@ interface CartItemRowProps {
 }
 
 export function CartItemRow({ item }: CartItemRowProps) {
+  const router = useRouter();
   const updateQuantity = useUpdateCartQuantity();
   const removeItem = useRemoveFromCart();
+  const saveForLater = useSaveForLater();
   const inStock = (item.stock ?? 1) > 0;
+
+  const handleSaveForLater = async () => {
+    try {
+      await saveForLater.mutateAsync(item);
+      toast.success("Saved for later");
+    } catch (err) {
+      if (err instanceof LoginRequiredError) {
+        toast.info("Sign in to save items for later");
+        router.push("/login");
+        return;
+      }
+      toast.error("Failed to save for later");
+    }
+  };
+
+  const saveForLaterButton = (
+    <button
+      type="button"
+      className="flex items-center gap-1 text-xs text-amazon-link hover:text-(--color-text-link-hover) hover:underline disabled:opacity-50"
+      onClick={handleSaveForLater}
+      disabled={saveForLater.isPending}
+    >
+      <Bookmark className="h-3 w-3" />
+      Save for later
+    </button>
+  );
 
   return (
     <div className="grid gap-4 border-b border-(--color-border) py-5 last:border-b-0 sm:grid-cols-[120px_1fr_auto]">
@@ -80,22 +111,20 @@ export function CartItemRow({ item }: CartItemRowProps) {
 
           <span className="hidden text-(--color-border) sm:inline">|</span>
 
-          <button
-            type="button"
-            className="hidden items-center gap-1 text-xs text-(--color-text-link) hover:text-(--color-text-link-hover) hover:underline sm:flex"
-          >
-            <Bookmark className="h-3 w-3" />
-            Save for later
-          </button>
+          <span className="hidden sm:inline">{saveForLaterButton}</span>
         </div>
 
-        <button
-          type="button"
-          className="flex items-center gap-1 text-xs text-(--color-text-link) hover:text-(--color-text-link-hover) hover:underline sm:hidden"
-        >
-          <Trash2 className="h-3 w-3" />
-          Remove
-        </button>
+        <div className="flex flex-wrap items-center gap-3 sm:hidden">
+          {saveForLaterButton}
+          <button
+            type="button"
+            className="flex items-center gap-1 text-xs text-(--color-text-link) hover:text-(--color-text-link-hover) hover:underline"
+            onClick={() => removeItem.mutate(item)}
+          >
+            <Trash2 className="h-3 w-3" />
+            Remove
+          </button>
+        </div>
       </div>
 
       <div className="text-left sm:text-right">

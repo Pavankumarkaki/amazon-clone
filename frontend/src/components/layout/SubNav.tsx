@@ -19,13 +19,13 @@ export function SubNav() {
 
   return (
     <nav
-      className="bg-[var(--color-header-secondary)] text-white"
+      className="bg-amazon-subnav text-white"
       aria-label="Secondary navigation"
     >
-      <div className="mx-auto flex h-[var(--subnav-height)] max-w-[var(--container-max)] items-center gap-0 overflow-x-auto px-2 sm:px-4">
+      <div className="mx-auto flex h-(--subnav-height) w-full min-w-0 max-w-(--container-max) items-center gap-0 overflow-x-auto px-2 sm:px-4">
         <button
           type="button"
-          className="flex shrink-0 items-center gap-1 rounded-sm px-2 py-1.5 text-sm font-bold transition-colors hover:outline hover:outline-1 hover:outline-white"
+          className="flex shrink-0 items-center gap-1 rounded-sm px-2 py-1.5 text-sm font-bold transition-colors hover:outline hover:outline-white"
         >
           <Menu className="h-5 w-5" />
           <span className="hidden sm:inline">All</span>
@@ -35,7 +35,7 @@ export function SubNav() {
           <Link
             key={link.label}
             href={link.href}
-            className="shrink-0 rounded-sm px-2 py-1.5 text-sm transition-colors hover:outline hover:outline-1 hover:outline-white"
+            className="shrink-0 rounded-sm px-2 py-1.5 text-sm transition-colors hover:outline hover:outline-white"
           >
             {link.label}
           </Link>
@@ -46,7 +46,7 @@ export function SubNav() {
             <Link
               key={cat.id}
               href={`/?category=${cat.slug}`}
-              className="hidden shrink-0 rounded-sm px-2 py-1.5 text-sm transition-colors hover:outline hover:outline-1 hover:outline-white md:inline"
+              className="hidden shrink-0 rounded-sm px-2 py-1.5 text-sm transition-colors hover:outline hover:outline-white md:inline"
             >
               {cat.name}
             </Link>

@@ -65,11 +65,11 @@ export function SearchBar() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex h-(--search-height) w-full">
+    <form onSubmit={handleSubmit} className="flex h-(--search-height) w-full min-w-0 max-w-full">
       <select
         value={category}
         onChange={handleCategoryChange}
-        className="hidden h-full shrink-0 cursor-pointer rounded-l-sm border-0 bg-[#dadada] px-5 py-1 text-xs text-(--color-text-primary) focus:outline-none sm:block sm:max-w-[140px] sm:text-sm"
+        className="hidden h-full shrink-0 cursor-pointer rounded-l-sm border-0 bg-[#dadada] px-3 py-1 text-xs text-(--color-text-primary) focus:outline-none md:block md:max-w-[140px] md:px-5 md:text-sm"
         aria-label="Search category"
       >
         <option value="">All</option>
@@ -83,16 +83,16 @@ export function SearchBar() {
 
       <input
         type="search"
-        placeholder="Search Amazon Clone"
+        placeholder="Search"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        className="h-full min-w-0 flex-1 border-0 bg-[#ffffff]  px-3 text-sm text-(--color-text-primary) placeholder:text-(--color-text-muted)"
+        className="h-full min-w-0 flex-1 basis-0 rounded-l-sm border-0 bg-[#ffffff] px-2 text-sm text-(--color-text-primary) placeholder:text-(--color-text-muted) sm:px-3 md:rounded-none"
         aria-label="Search products"
       />
 
       <button
         type="submit"
-        className="flex h-full w-11 shrink-0 items-center justify-center rounded-r-sm bg-amazon-orange transition-colors hover:bg-(--color-accent-orange-hover) focus:outline focus:outline-white"
+        className="flex h-full w-10 shrink-0 items-center justify-center rounded-r-sm bg-amazon-orange transition-colors hover:bg-(--color-accent-orange-hover) focus:outline focus:outline-white sm:w-11"
         aria-label="Search"
       >
         <Search className="h-5 w-5 text-(--color-text-primary)" />

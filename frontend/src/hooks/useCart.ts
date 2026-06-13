@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
+import { getQueryClient } from "@/lib/queryClientRegistry";
 import { DEFAULT_CURRENCY } from "@/lib/utils";
 import { queryKeys } from "@/lib/queryKeys";
 import { useAuthStore } from "@/store/auth.store";
@@ -173,9 +174,17 @@ export async function clearServerCart() {
   return apiClient<ServerCart>("/cart", { method: "DELETE" });
 }
 
+export async function syncCartQueryCache() {
+  const cart = await apiClient<ServerCart>("/cart");
+  const queryClient = getQueryClient();
+  if (queryClient) {
+    queryClient.setQueryData(queryKeys.cart.all, cart);
+  }
+  return cart;
+}
+
 export async function mergeGuestCartToServer() {
   const guestItems = useCartStore.getState().items;
-  if (guestItems.length === 0) return;
 
   for (const item of guestItems) {
     try {
@@ -188,5 +197,13 @@ export async function mergeGuestCartToServer() {
     }
   }
 
-  useCartStore.getState().clear();
+  if (guestItems.length > 0) {
+    useCartStore.getState().clear();
+  }
+
+  try {
+    return await syncCartQueryCache();
+  } catch {
+    return null;
+  }
 }

@@ -3,7 +3,6 @@
 import useEmblaCarousel from "embla-carousel-react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 interface CarouselProps {
@@ -31,51 +30,61 @@ export function Carousel({ images, alt, className }: CarouselProps) {
 
   if (!images.length) {
     return (
-      <div className={cn("flex h-80 items-center justify-center bg-gray-100", className)}>
-        <span className="text-gray-400">No image</span>
+      <div className={cn("flex aspect-square items-center justify-center bg-[#F7FAFA]", className)}>
+        <span className="text-[var(--color-text-muted)]">No image</span>
       </div>
     );
   }
 
   return (
     <div className={cn("relative", className)}>
-      <div className="overflow-hidden rounded-lg" ref={emblaRef}>
+      <div className="overflow-hidden rounded-sm border border-[var(--color-border)]" ref={emblaRef}>
         <div className="flex">
           {images.map((url, i) => (
             <div key={i} className="min-w-0 flex-[0_0_100%]">
-              <img src={url} alt={`${alt} - ${i + 1}`} className="h-80 w-full object-contain bg-white" />
+              <img
+                src={url}
+                alt={`${alt} - ${i + 1}`}
+                className="aspect-square w-full object-contain bg-white p-4"
+              />
             </div>
           ))}
         </div>
       </div>
       {images.length > 1 && (
         <>
-          <Button
-            variant="secondary"
-            size="icon"
-            className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full shadow"
+          <button
+            type="button"
+            className="absolute left-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-sm bg-white/90 text-[var(--color-text-primary)] shadow-md transition-all hover:bg-white"
             onClick={scrollPrev}
+            aria-label="Previous image"
           >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="secondary"
-            size="icon"
-            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full shadow"
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+          <button
+            type="button"
+            className="absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-sm bg-white/90 text-[var(--color-text-primary)] shadow-md transition-all hover:bg-white"
             onClick={scrollNext}
+            aria-label="Next image"
           >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-          <div className="mt-2 flex justify-center gap-1">
-            {images.map((_, i) => (
+            <ChevronRight className="h-5 w-5" />
+          </button>
+          <div className="mt-3 flex justify-center gap-2">
+            {images.map((url, i) => (
               <button
                 key={i}
+                type="button"
                 className={cn(
-                  "h-2 w-2 rounded-full transition-colors",
-                  i === selectedIndex ? "bg-amber-500" : "bg-gray-300",
+                  "h-12 w-12 overflow-hidden rounded-sm border-2 transition-colors",
+                  i === selectedIndex
+                    ? "border-[var(--color-accent-orange)]"
+                    : "border-[var(--color-border)] hover:border-[#888C8C]",
                 )}
                 onClick={() => emblaApi?.scrollTo(i)}
-              />
+                aria-label={`View image ${i + 1}`}
+              >
+                <img src={url} alt="" className="h-full w-full object-contain" />
+              </button>
             ))}
           </div>
         </>

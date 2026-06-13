@@ -4,6 +4,7 @@ import { Toaster } from "sonner";
 import { CartDrawer } from "@/components/layout/CartDrawer";
 import { Footer } from "@/components/layout/Footer";
 import { Navbar } from "@/components/layout/Navbar";
+import { SubNav } from "@/components/layout/SubNav";
 import { AuthProvider } from "@/providers/AuthProvider";
 import { QueryProvider } from "@/providers/QueryProvider";
 import "./globals.css";
@@ -34,7 +35,8 @@ export default function RootLayout({
         <QueryProvider>
           <AuthProvider>
             <Navbar />
-            <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6">{children}</main>
+            <SubNav />
+            <main className="w-full flex-1">{children}</main>
             <Footer />
             <CartDrawer />
             <Toaster position="bottom-right" richColors />

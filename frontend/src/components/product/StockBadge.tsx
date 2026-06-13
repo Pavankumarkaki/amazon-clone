@@ -1,15 +1,23 @@
-import { Badge } from "@/components/ui/badge";
-
 interface StockBadgeProps {
   stock: number;
 }
 
 export function StockBadge({ stock }: StockBadgeProps) {
   if (stock <= 0) {
-    return <Badge variant="destructive">Out of Stock</Badge>;
+    return (
+      <span className="text-sm font-medium text-[var(--color-deal)]">Currently unavailable</span>
+    );
   }
-  if (stock < 10) {
-    return <Badge variant="default">Only {stock} left</Badge>;
+
+  if (stock <= 5) {
+    return (
+      <span className="text-sm font-medium text-[var(--color-deal)]">
+        Only {stock} left in stock - order soon
+      </span>
+    );
   }
-  return <Badge variant="success">In Stock</Badge>;
+
+  return (
+    <span className="text-sm font-medium text-[var(--color-in-stock)]">In Stock</span>
+  );
 }

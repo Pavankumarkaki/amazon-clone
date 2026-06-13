@@ -19,31 +19,50 @@ export function CartDrawer() {
 
   return (
     <>
-      <div className="fixed inset-0 z-50 bg-black/50" onClick={closeCart} />
-      <div className="fixed right-0 top-0 z-50 flex h-full w-full max-w-md flex-col bg-white shadow-xl">
-        <div className="flex items-center justify-between border-b px-4 py-3">
-          <h2 className="text-lg font-semibold">Shopping Cart ({itemCount})</h2>
-          <Button variant="ghost" size="icon" onClick={closeCart}>
+      <div
+        className="fixed inset-0 z-50 bg-black/50 transition-opacity"
+        onClick={closeCart}
+        aria-hidden="true"
+      />
+      <div
+        className="fixed right-0 top-0 z-50 flex h-full w-full max-w-md flex-col bg-white shadow-[var(--shadow-drawer)]"
+        role="dialog"
+        aria-label="Shopping cart"
+      >
+        <div className="flex items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-header-primary)] px-4 py-3 text-white">
+          <h2 className="text-lg font-bold">Shopping Cart ({itemCount})</h2>
+          <button
+            type="button"
+            onClick={closeCart}
+            className="rounded-sm p-1 transition-colors hover:bg-[var(--color-header-hover)]"
+            aria-label="Close cart"
+          >
             <X className="h-5 w-5" />
-          </Button>
+          </button>
         </div>
+
         <div className="flex-1 overflow-y-auto px-4">
           {items.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-gray-500">
-              <p>Your cart is empty</p>
-              <Button variant="link" onClick={closeCart} className="mt-2">
-                <Link href="/">Continue Shopping</Link>
-              </Button>
+            <div className="flex flex-col items-center justify-center py-16 text-[var(--color-text-secondary)]">
+              <p className="text-lg font-medium text-[var(--color-text-primary)]">Your cart is empty</p>
+              <Link
+                href="/"
+                onClick={closeCart}
+                className="amazon-link mt-4 text-sm font-medium"
+              >
+                Continue Shopping
+              </Link>
             </div>
           ) : (
             items.map((item) => <CartItemRow key={item.productId} item={item} />)
           )}
         </div>
+
         {items.length > 0 && (
-          <div className="border-t p-4">
+          <div className="border-t border-[var(--color-border)] bg-[#F0F2F2] p-4">
             <CartSummary subtotalCents={subtotal} itemCount={itemCount} />
             <Link href="/cart" onClick={closeCart}>
-              <Button variant="outline" className="mt-2 w-full">
+              <Button variant="secondary" className="mt-2 w-full">
                 View Full Cart
               </Button>
             </Link>

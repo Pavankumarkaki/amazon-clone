@@ -27,6 +27,8 @@ const addressSchema = z.object({
 
 type AddressForm = z.infer<typeof addressSchema>;
 
+const STEPS = ["Shipping", "Payment", "Review"];
+
 export default function CheckoutPage() {
   const router = useRouter();
   const items = useCartStore((s) => s.items);
@@ -46,9 +48,9 @@ export default function CheckoutPage() {
 
   if (items.length === 0) {
     return (
-      <div className="py-16 text-center">
-        <h1 className="text-xl font-semibold">Your cart is empty</h1>
-        <Button className="mt-4" onClick={() => router.push("/")}>
+      <div className="mx-auto max-w-[var(--container-max)] px-4 py-16 text-center">
+        <h1 className="text-xl font-semibold text-[var(--color-text-primary)]">Your cart is empty</h1>
+        <Button variant="amazon" className="mt-4" onClick={() => router.push("/")}>
           Continue Shopping
         </Button>
       </div>
@@ -70,70 +72,112 @@ export default function CheckoutPage() {
   };
 
   return (
-    <div>
-      <h1 className="mb-6 text-2xl font-bold">Checkout</h1>
+    <div className="mx-auto max-w-[var(--container-max)] px-4 py-6">
+      <div className="mb-6 flex items-center gap-2">
+        {STEPS.map((step, i) => (
+          <div key={step} className="flex items-center gap-2">
+            <span
+              className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${
+                i === 0
+                  ? "bg-[var(--color-accent-orange)] text-[var(--color-text-primary)]"
+                  : "bg-[#E3E6E6] text-[var(--color-text-secondary)]"
+              }`}
+            >
+              {i + 1}
+            </span>
+            <span
+              className={`text-sm ${i === 0 ? "font-bold text-[var(--color-text-primary)]" : "text-[var(--color-text-secondary)]"}`}
+            >
+              {step}
+            </span>
+            {i < STEPS.length - 1 && (
+              <span className="mx-1 text-[var(--color-text-muted)]">›</span>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <h1 className="mb-6 text-2xl font-bold text-[var(--color-text-primary)]">Checkout</h1>
+
       <form onSubmit={handleSubmit(onSubmit)}>
-        <div className="grid gap-8 lg:grid-cols-3">
+        <div className="grid gap-6 lg:grid-cols-3">
           <div className="space-y-6 lg:col-span-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Shipping Address</CardTitle>
+            <Card className="shadow-[var(--shadow-card)]">
+              <CardHeader className="border-b border-[var(--color-border)]">
+                <CardTitle>1. Shipping Address</CardTitle>
               </CardHeader>
-              <CardContent className="grid gap-4 sm:grid-cols-2">
+              <CardContent className="grid gap-4 pt-5 sm:grid-cols-2">
                 <div className="sm:col-span-2">
                   <Label htmlFor="full_name">Full Name</Label>
-                  <Input id="full_name" {...register("full_name")} />
-                  {errors.full_name && <p className="mt-1 text-xs text-red-500">{errors.full_name.message}</p>}
+                  <Input id="full_name" className="mt-1" {...register("full_name")} />
+                  {errors.full_name && (
+                    <p className="mt-1 text-xs text-[var(--color-deal)]">{errors.full_name.message}</p>
+                  )}
                 </div>
                 <div className="sm:col-span-2">
                   <Label htmlFor="address_line1">Address Line 1</Label>
-                  <Input id="address_line1" {...register("address_line1")} />
-                  {errors.address_line1 && <p className="mt-1 text-xs text-red-500">{errors.address_line1.message}</p>}
+                  <Input id="address_line1" className="mt-1" {...register("address_line1")} />
+                  {errors.address_line1 && (
+                    <p className="mt-1 text-xs text-[var(--color-deal)]">{errors.address_line1.message}</p>
+                  )}
                 </div>
                 <div className="sm:col-span-2">
                   <Label htmlFor="address_line2">Address Line 2 (optional)</Label>
-                  <Input id="address_line2" {...register("address_line2")} />
+                  <Input id="address_line2" className="mt-1" {...register("address_line2")} />
                 </div>
                 <div>
                   <Label htmlFor="city">City</Label>
-                  <Input id="city" {...register("city")} />
-                  {errors.city && <p className="mt-1 text-xs text-red-500">{errors.city.message}</p>}
+                  <Input id="city" className="mt-1" {...register("city")} />
+                  {errors.city && (
+                    <p className="mt-1 text-xs text-[var(--color-deal)]">{errors.city.message}</p>
+                  )}
                 </div>
                 <div>
                   <Label htmlFor="state">State</Label>
-                  <Input id="state" {...register("state")} />
-                  {errors.state && <p className="mt-1 text-xs text-red-500">{errors.state.message}</p>}
+                  <Input id="state" className="mt-1" {...register("state")} />
+                  {errors.state && (
+                    <p className="mt-1 text-xs text-[var(--color-deal)]">{errors.state.message}</p>
+                  )}
                 </div>
                 <div>
                   <Label htmlFor="postal_code">Postal Code</Label>
-                  <Input id="postal_code" {...register("postal_code")} />
-                  {errors.postal_code && <p className="mt-1 text-xs text-red-500">{errors.postal_code.message}</p>}
+                  <Input id="postal_code" className="mt-1" {...register("postal_code")} />
+                  {errors.postal_code && (
+                    <p className="mt-1 text-xs text-[var(--color-deal)]">{errors.postal_code.message}</p>
+                  )}
                 </div>
                 <div>
                   <Label htmlFor="country">Country</Label>
-                  <Input id="country" {...register("country")} />
-                  {errors.country && <p className="mt-1 text-xs text-red-500">{errors.country.message}</p>}
+                  <Input id="country" className="mt-1" {...register("country")} />
+                  {errors.country && (
+                    <p className="mt-1 text-xs text-[var(--color-deal)]">{errors.country.message}</p>
+                  )}
                 </div>
                 <div className="sm:col-span-2">
                   <Label htmlFor="phone">Phone</Label>
-                  <Input id="phone" {...register("phone")} />
-                  {errors.phone && <p className="mt-1 text-xs text-red-500">{errors.phone.message}</p>}
+                  <Input id="phone" className="mt-1" {...register("phone")} />
+                  {errors.phone && (
+                    <p className="mt-1 text-xs text-[var(--color-deal)]">{errors.phone.message}</p>
+                  )}
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Order Review</CardTitle>
+            <Card className="shadow-[var(--shadow-card)]">
+              <CardHeader className="border-b border-[var(--color-border)]">
+                <CardTitle>2. Order Review</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-5">
                 <div className="space-y-3">
                   {items.map((item) => (
-                    <div key={item.productId} className="flex justify-between text-sm">
-                      <span>
+                    <div
+                      key={item.productId}
+                      className="flex justify-between border-b border-[var(--color-border)] pb-3 text-sm last:border-0"
+                    >
+                      <span className="text-[var(--color-text-primary)]">
                         {item.title} x {item.quantity}
                       </span>
-                      <span>{formatPrice(item.priceCents * item.quantity)}</span>
+                      <span className="font-medium">{formatPrice(item.priceCents * item.quantity)}</span>
                     </div>
                   ))}
                 </div>
@@ -141,10 +185,16 @@ export default function CheckoutPage() {
             </Card>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-4 lg:sticky lg:top-[calc(var(--header-height)+var(--subnav-height)+16px)] lg:self-start">
             <CartSummary subtotalCents={subtotal} itemCount={itemCount} showCheckoutButton={false} />
-            <Button type="submit" className="w-full" size="lg" disabled={isSubmitting || createOrder.isPending}>
-              {isSubmitting || createOrder.isPending ? "Placing Order..." : "Place Order"}
+            <Button
+              type="submit"
+              variant="amazon"
+              className="w-full"
+              size="lg"
+              disabled={isSubmitting || createOrder.isPending}
+            >
+              {isSubmitting || createOrder.isPending ? "Placing Order..." : "Place your order"}
             </Button>
           </div>
         </div>

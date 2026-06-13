@@ -42,34 +42,38 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="mx-auto max-w-md">
-      <Card>
-        <CardHeader>
+    <div className="mx-auto max-w-md px-4 py-8">
+      <Card className="shadow-[var(--shadow-card)]">
+        <CardHeader className="border-b border-[var(--color-border)]">
           <CardTitle className="text-center text-2xl">Sign In</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-5">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div>
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" {...register("email")} />
-              {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email.message}</p>}
+              <Input id="email" type="email" className="mt-1" {...register("email")} />
+              {errors.email && (
+                <p className="mt-1 text-xs text-[var(--color-deal)]">{errors.email.message}</p>
+              )}
             </div>
             <div>
               <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" {...register("password")} />
-              {errors.password && <p className="mt-1 text-xs text-red-500">{errors.password.message}</p>}
+              <Input id="password" type="password" className="mt-1" {...register("password")} />
+              {errors.password && (
+                <p className="mt-1 text-xs text-[var(--color-deal)]">{errors.password.message}</p>
+              )}
             </div>
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
+            <Button type="submit" variant="amazon" className="w-full" disabled={isSubmitting}>
               {isSubmitting ? "Signing in..." : "Sign In"}
             </Button>
           </form>
-          <p className="mt-4 text-center text-sm text-gray-500">
+          <p className="mt-4 text-center text-sm text-[var(--color-text-secondary)]">
             Don&apos;t have an account?{" "}
-            <Link href="/register" className="text-amber-600 hover:underline">
+            <Link href="/register" className="amazon-link font-medium">
               Create one
             </Link>
           </p>
-          <p className="mt-2 text-center text-xs text-gray-400">
+          <p className="mt-2 text-center text-xs text-[var(--color-text-muted)]">
             Demo: demo@amazon-clone.com / demo123
           </p>
         </CardContent>

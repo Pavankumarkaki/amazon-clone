@@ -1,21 +1,68 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f3f4f6;
-  --foreground: #111827;
+  --background: #eaeded;
+  --foreground: #0f1111;
+
+  --color-header-primary: #131921;
+  --color-header-secondary: #232f3e;
+  --color-header-hover: #37475a;
+  --color-accent-orange: #ff9900;
+  --color-accent-orange-hover: #e88b00;
+  --color-accent-yellow: #ffd814;
+  --color-accent-yellow-hover: #f7ca00;
+  --color-accent-yellow-active: #f0b800;
+  --color-bg-page: #eaeded;
+  --color-bg-card: #ffffff;
+  --color-text-primary: #0f1111;
+  --color-text-secondary: #565959;
+  --color-text-muted: #888c8c;
+  --color-text-link: #007185;
+  --color-text-link-hover: #c7511f;
+  --color-border: #d5d9d9;
+  --color-footer-top: #37475a;
+  --color-footer-main: #232f3e;
+  --color-deal: #cc0c39;
+  --color-in-stock: #007600;
+
+  --color-border-light: #e7e7e7;
+  --color-rating-gold: #ffa41c;
+
+  --shadow-card: 0 2px 5px rgba(15, 17, 17, 0.1);
+  --shadow-card-hover: 0 4px 12px rgba(15, 17, 17, 0.15);
+  --shadow-drawer: 0 0 14px rgba(15, 17, 17, 0.25);
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+
+  --header-height: 60px;
+  --subnav-height: 39px;
+  --search-height: 40px;
+  --container-max: 1500px;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: "Amazon Ember", Arial, sans-serif;
   --font-mono: var(--font-geist-mono);
+
+  --color-amazon-header: var(--color-header-primary);
+  --color-amazon-subnav: var(--color-header-secondary);
+  --color-amazon-orange: var(--color-accent-orange);
+  --color-amazon-yellow: var(--color-accent-yellow);
+  --color-amazon-page: var(--color-bg-page);
+  --color-amazon-link: var(--color-text-link);
+  --color-amazon-deal: var(--color-deal);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.4;
 }
 
 .line-clamp-2 {
@@ -23,4 +70,108 @@ body {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.amazon-btn-primary {
+  background: linear-gradient(to bottom, #f7dfa5, var(--color-accent-yellow));
+  border: 1px solid #a88734;
+  border-radius: var(--radius-sm);
+  box-shadow: 0 2px 5px rgba(213, 217, 217, 0.5);
+  color: var(--color-text-primary);
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.amazon-btn-primary:hover:not(:disabled) {
+  background: linear-gradient(to bottom, #f5d78e, var(--color-accent-yellow-hover));
+}
+
+.amazon-btn-primary:active:not(:disabled) {
+  background: var(--color-accent-yellow-active);
+  box-shadow: inset 0 1px 3px rgba(15, 17, 17, 0.2);
+}
+
+.amazon-link {
+  color: var(--color-text-link);
+  transition: color 0.15s ease, text-decoration 0.15s ease;
+}
+
+.amazon-link:hover {
+  color: var(--color-text-link-hover);
+  text-decoration: underline;
+}
+
+.amazon-card {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-card);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.amazon-card:hover {
+  box-shadow: var(--shadow-card-hover);
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+/* Product detail page typography */
+.text-product-title {
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1.3;
+  color: var(--color-text-primary);
+}
+
+@media (min-width: 1024px) {
+  .text-product-title {
+    font-size: 28px;
+  }
+}
+
+.text-product-section-heading {
+  font-size: 21px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--color-text-primary);
+}
+
+.text-product-price {
+  font-size: 28px;
+  font-weight: 400;
+  line-height: 1.2;
+  color: var(--color-text-primary);
+}
+
+.text-product-price-deal {
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 1.3;
+}
+
+.text-product-meta {
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+/* Amazon-style product image zoom lens */
+.amazon-zoom-lens {
+  background-color: rgba(169, 204, 227, 0.35);
+  background-image:
+    linear-gradient(to right, rgba(0, 113, 133, 0.25) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 113, 133, 0.25) 1px, transparent 1px);
+  background-size: 12px 12px;
+  border: 1px solid rgba(0, 113, 133, 0.4);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.3);
 }

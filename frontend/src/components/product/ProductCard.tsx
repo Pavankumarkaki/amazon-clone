@@ -1,11 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { PriceTag } from "@/components/product/PriceTag";
+import { getProductRating, StarRating } from "@/components/product/StarRating";
 import { useCartStore } from "@/store/cart.store";
 import type { ProductCard as ProductCardType } from "@/types";
 
@@ -16,10 +15,13 @@ interface ProductCardProps {
 export function ProductCard({ product }: ProductCardProps) {
   const addItem = useCartStore((s) => s.addItem);
   const imageUrl = product.images[0]?.url;
+  const { rating, count } = getProductRating(product.id);
+  const isOutOfStock = product.stock <= 0;
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
-    if (product.stock <= 0) {
+    e.stopPropagation();
+    if (isOutOfStock) {
       toast.error("Out of stock");
       return;
     }
@@ -34,33 +36,48 @@ export function ProductCard({ product }: ProductCardProps) {
   };
 
   return (
-    <Link href={`/products/${product.id}`}>
-      <Card className="group h-full overflow-hidden transition-shadow hover:shadow-lg">
-        <div className="aspect-square overflow-hidden bg-white p-4">
+    <article className="group flex h-full flex-col bg-white p-3 transition-shadow hover:shadow-[var(--shadow-card-hover)]">
+      <Link href={`/products/${product.id}`} className="flex flex-1 flex-col">
+        <div className="relative mb-3 flex aspect-square items-center justify-center overflow-hidden bg-white">
           {imageUrl ? (
             <img
               src={imageUrl}
               alt={product.title}
-              className="h-full w-full object-contain transition-transform group-hover:scale-105"
+              className="max-h-full max-w-full object-contain transition-transform duration-200 group-hover:scale-105"
             />
           ) : (
-            <div className="flex h-full items-center justify-center text-gray-300">No image</div>
+            <div className="flex h-full w-full items-center justify-center text-[var(--color-text-muted)]">
+              No image
+            </div>
           )}
         </div>
-        <CardContent className="space-y-2 p-4">
-          <h3 className="line-clamp-2 text-sm font-medium text-gray-900">{product.title}</h3>
-          <PriceTag cents={product.price_cents} currency={product.currency} />
-          <Button
-            className="w-full"
-            size="sm"
-            onClick={handleAddToCart}
-            disabled={product.stock <= 0}
-          >
-            <ShoppingCart className="h-4 w-4" />
-            Add to Cart
-          </Button>
-        </CardContent>
-      </Card>
-    </Link>
+
+        <h3 className="line-clamp-2 text-sm leading-snug text-[var(--color-text-primary)] group-hover:text-[var(--color-text-link-hover)]">
+          {product.title}
+        </h3>
+
+        <div className="mt-1.5">
+          <StarRating rating={rating} reviewCount={count} />
+        </div>
+
+        <div className="mt-1.5">
+          <PriceTag cents={product.price_cents} currency={product.currency} size="md" />
+        </div>
+
+        {isOutOfStock && (
+          <p className="mt-1 text-xs font-medium text-[var(--color-deal)]">Currently unavailable</p>
+        )}
+      </Link>
+
+      <Button
+        variant="amazon"
+        size="sm"
+        className="mt-3 w-full"
+        onClick={handleAddToCart}
+        disabled={isOutOfStock}
+      >
+        Add to Cart
+      </Button>
+    </article>
   );
 }

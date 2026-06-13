@@ -1,7 +1,6 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { Select } from "@/components/ui/select";
 import { useCategories } from "@/hooks/useCategories";
 
 export function CategoryFilter() {
@@ -22,13 +21,18 @@ export function CategoryFilter() {
   };
 
   return (
-    <Select value={current} onChange={handleChange} className="w-48">
+    <select
+      value={current}
+      onChange={handleChange}
+      className="h-8 cursor-pointer rounded-sm border border-[var(--color-border)] bg-[#F0F2F2] px-3 text-sm text-[var(--color-text-primary)] shadow-sm focus:border-[var(--color-accent-orange)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent-orange)]"
+      aria-label="Filter by category"
+    >
       <option value="">All Categories</option>
       {categories?.map((cat) => (
         <option key={cat.id} value={cat.slug}>
           {cat.name}
         </option>
       ))}
-    </Select>
+    </select>
   );
 }

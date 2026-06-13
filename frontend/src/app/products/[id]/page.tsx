@@ -1,18 +1,23 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { Heart, ShoppingCart, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Carousel } from "@/components/ui/carousel";
-import { PriceTag } from "@/components/product/PriceTag";
-import { SpecTable } from "@/components/product/SpecTable";
-import { StockBadge } from "@/components/product/StockBadge";
+import { CustomerReviewsSection } from "@/components/product/CustomerReviewsSection";
+import { ProductBreadcrumb } from "@/components/product/ProductBreadcrumb";
+import { ProductBuyBox } from "@/components/product/ProductBuyBox";
+import { ProductDescriptionSection } from "@/components/product/ProductDescriptionSection";
+import { ProductExtendedDetails } from "@/components/product/ProductExtendedDetails";
+import { ProductImageGallery } from "@/components/product/ProductImageGallery";
+import { ProductInfoPanel } from "@/components/product/ProductInfoPanel";
+import { ProductMobileBuyBar } from "@/components/product/ProductMobileBuyBar";
+import { RelatedProductsSection } from "@/components/product/RelatedProductsSection";
 import { useProduct } from "@/hooks/useProduct";
 import { useAddToWishlist, useWishlist } from "@/hooks/useWishlist";
 import { useAuthStore } from "@/store/auth.store";
 import { useCartStore } from "@/store/cart.store";
+import type { ProductCard } from "@/types";
 
 export default function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -25,24 +30,47 @@ export default function ProductDetailPage() {
 
   const isWishlisted = wishlist?.some((w) => w.product_id === id);
 
+  const addProductToCart = (item: ProductCard, quantity = 1) => {
+    if (item.stock <= 0) {
+      toast.error("Out of stock");
+      return;
+    }
+    addItem(
+      {
+        productId: item.id,
+        title: item.title,
+        priceCents: item.price_cents,
+        currency: item.currency,
+        imageUrl: item.images[0]?.url,
+      },
+      quantity,
+    );
+  };
+
   if (isLoading) {
     return (
-      <div className="grid gap-8 md:grid-cols-2">
-        <Skeleton className="h-80 w-full" />
-        <div className="space-y-4">
-          <Skeleton className="h-8 w-3/4" />
-          <Skeleton className="h-6 w-1/4" />
-          <Skeleton className="h-32 w-full" />
+      <>
+        <ProductBreadcrumb />
+        <div className="mx-auto max-w-[var(--container-max)] px-4 py-6">
+          <div className="grid gap-8 lg:grid-cols-[646px_1fr_254px]">
+            <Skeleton className="aspect-square w-full" />
+            <div className="space-y-4">
+              <Skeleton className="h-8 w-3/4" />
+              <Skeleton className="h-6 w-1/4" />
+              <Skeleton className="h-32 w-full" />
+            </div>
+            <Skeleton className="hidden h-96 w-full lg:block" />
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
   if (error || !product) {
     return (
-      <div className="py-16 text-center">
-        <h1 className="text-xl font-semibold">Product not found</h1>
-        <Button className="mt-4" onClick={() => router.push("/")}>
+      <div className="mx-auto max-w-[var(--container-max)] px-4 py-16 text-center">
+        <h1 className="text-xl font-semibold text-[var(--color-text-primary)]">Product not found</h1>
+        <Button variant="amazon" className="mt-4" onClick={() => router.push("/")}>
           Back to Products
         </Button>
       </div>
@@ -51,79 +79,89 @@ export default function ProductDetailPage() {
 
   const images = product.images.map((img) => img.url);
 
-  const handleAddToCart = () => {
-    if (product.stock <= 0) {
-      toast.error("Out of stock");
-      return;
-    }
-    addItem({
-      productId: product.id,
-      title: product.title,
-      priceCents: product.price_cents,
-      currency: product.currency,
-      imageUrl: images[0],
-    });
-    toast.success("Added to cart");
+  const handleAddToCart = (quantity = 1) => {
+    addProductToCart(product, quantity);
+    toast.success(quantity > 1 ? `Added ${quantity} items to cart` : "Added to cart");
   };
 
-  const handleBuyNow = () => {
-    handleAddToCart();
+  const handleBuyNow = (quantity = 1) => {
+    handleAddToCart(quantity);
     router.push("/checkout");
   };
 
-  const handleWishlist = async () => {
+  const handleAddToList = async () => {
     if (!user) {
       router.push("/login");
       return;
     }
+    if (isWishlisted) {
+      toast.info("Already in your wishlist");
+      return;
+    }
     try {
       await addToWishlist.mutateAsync(product.id);
-      toast.success("Added to wishlist");
+      toast.success("Added to list");
     } catch {
-      toast.error("Failed to add to wishlist");
+      toast.error("Failed to add to list");
     }
   };
 
+  const handleRelatedAddToCart = (item: ProductCard) => {
+    addProductToCart(item);
+    toast.success("Added to cart");
+  };
+
   return (
-    <div className="grid gap-8 md:grid-cols-2">
-      <Carousel images={images} alt={product.title} />
-      <div className="space-y-6">
-        <div>
-          <p className="text-sm text-gray-500">{product.category.name}</p>
-          <h1 className="mt-1 text-2xl font-bold text-gray-900">{product.title}</h1>
-          <div className="mt-2 flex items-center gap-3">
-            <PriceTag cents={product.price_cents} currency={product.currency} size="lg" />
-            <StockBadge stock={product.stock} />
+    <>
+      <ProductBreadcrumb categorySlug={product.category.slug} productTitle={product.title} />
+
+      <div className="bg-white pb-24 lg:pb-6">
+        <div className="mx-auto max-w-[var(--container-max)] px-4 py-4 lg:py-6">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[646px_1fr_254px] lg:gap-8">
+            <div className="order-1 overflow-visible">
+              <ProductImageGallery images={images} alt={product.title} />
+            </div>
+
+            <div className="order-2">
+              <ProductInfoPanel product={product} />
+            </div>
+
+            <div className="order-3">
+              <div className="hidden lg:block">
+                <ProductBuyBox
+                  product={product}
+                  onAddToCart={handleAddToCart}
+                  onBuyNow={handleBuyNow}
+                  onAddToList={handleAddToList}
+                />
+              </div>
+
+              <div className="hidden md:block lg:hidden">
+                <ProductBuyBox
+                  product={product}
+                  onAddToCart={handleAddToCart}
+                  onBuyNow={handleBuyNow}
+                  onAddToList={handleAddToList}
+                  sticky={false}
+                />
+              </div>
+            </div>
           </div>
         </div>
-        <p className="text-gray-600 leading-relaxed">{product.description}</p>
-        <div className="flex flex-col gap-3 sm:flex-row">
-          <Button size="lg" className="flex-1" onClick={handleAddToCart} disabled={product.stock <= 0}>
-            <ShoppingCart className="h-5 w-5" />
-            Add to Cart
-          </Button>
-          <Button size="lg" variant="secondary" className="flex-1" onClick={handleBuyNow} disabled={product.stock <= 0}>
-            <Zap className="h-5 w-5" />
-            Buy Now
-          </Button>
-          {user && (
-            <Button
-              size="lg"
-              variant="outline"
-              onClick={handleWishlist}
-              disabled={isWishlisted || addToWishlist.isPending}
-            >
-              <Heart className={`h-5 w-5 ${isWishlisted ? "fill-red-500 text-red-500" : ""}`} />
-            </Button>
-          )}
+
+        <ProductDescriptionSection product={product} />
+        <ProductExtendedDetails product={product} />
+        <div id="customer-reviews">
+          <CustomerReviewsSection productId={product.id} />
         </div>
-        {Object.keys(product.specs).length > 0 && (
-          <div>
-            <h2 className="mb-3 text-lg font-semibold">Specifications</h2>
-            <SpecTable specs={product.specs} />
-          </div>
-        )}
+        <RelatedProductsSection product={product} onAddToCart={handleRelatedAddToCart} />
       </div>
-    </div>
+
+      <ProductMobileBuyBar
+        product={product}
+        onAddToCart={handleAddToCart}
+        onBuyNow={handleBuyNow}
+      />
+    </>
   );
 }

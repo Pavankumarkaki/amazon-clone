@@ -1,7 +1,7 @@
 "use client";
 
+import Link from "next/link";
 import { Trash2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { PriceTag } from "@/components/product/PriceTag";
 import { QuantityStepper } from "@/components/product/QuantityStepper";
 import { useCartStore } from "@/store/cart.store";
@@ -15,36 +15,59 @@ export function CartItemRow({ item }: CartItemRowProps) {
   const { setQuantity, removeItem } = useCartStore();
 
   return (
-    <div className="flex gap-4 border-b border-gray-200 py-4">
-      <div className="h-20 w-20 shrink-0 overflow-hidden rounded bg-white">
+    <div className="flex gap-4 border-b border-[var(--color-border)] bg-white py-5 last:border-b-0">
+      <Link
+        href={`/products/${item.productId}`}
+        className="h-28 w-28 shrink-0 overflow-hidden rounded-sm bg-white p-2 transition-shadow hover:shadow-sm"
+      >
         {item.imageUrl ? (
           <img src={item.imageUrl} alt={item.title} className="h-full w-full object-contain" />
         ) : (
-          <div className="flex h-full items-center justify-center text-xs text-gray-300">No img</div>
+          <div className="flex h-full items-center justify-center text-xs text-[var(--color-text-muted)]">
+            No img
+          </div>
         )}
-      </div>
-      <div className="flex flex-1 flex-col justify-between">
+      </Link>
+
+      <div className="flex min-w-0 flex-1 flex-col justify-between">
         <div>
-          <h3 className="text-sm font-medium text-gray-900 line-clamp-2">{item.title}</h3>
-          <PriceTag cents={item.priceCents} currency={item.currency} size="sm" />
+          <Link
+            href={`/products/${item.productId}`}
+            className="line-clamp-2 text-sm text-(--color-text-primary) hover:text-(--color-text-link-hover) hover:underline"
+          >
+            {item.title}
+          </Link>
+          <div className="mt-1">
+            <span className="text-xs text-[var(--color-in-stock)]">In Stock</span>
+          </div>
+          <div className="mt-1">
+            <PriceTag cents={item.priceCents} currency={item.currency} size="md" />
+          </div>
         </div>
-        <div className="flex items-center justify-between">
-          <QuantityStepper
-            value={item.quantity}
-            onChange={(qty) => setQuantity(item.productId, qty)}
-          />
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-red-500 hover:text-red-700"
+
+        <div className="mt-3 flex flex-wrap items-center gap-4">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-[var(--color-text-secondary)]">Qty:</span>
+            <QuantityStepper
+              value={item.quantity}
+              onChange={(qty) => setQuantity(item.productId, qty)}
+            />
+          </div>
+          <button
+            type="button"
+            className="text-xs text-[var(--color-text-link)] hover:text-[var(--color-text-link-hover)] hover:underline"
             onClick={() => removeItem(item.productId)}
           >
-            <Trash2 className="h-4 w-4" />
-          </Button>
+            <span className="flex items-center gap-1">
+              <Trash2 className="h-3 w-3" />
+              Delete
+            </span>
+          </button>
         </div>
       </div>
-      <div className="text-right">
-        <PriceTag cents={item.priceCents * item.quantity} currency={item.currency} />
+
+      <div className="shrink-0 text-right">
+        <PriceTag cents={item.priceCents * item.quantity} currency={item.currency} size="md" />
       </div>
     </div>
   );

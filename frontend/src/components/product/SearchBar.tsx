@@ -4,15 +4,17 @@ import { Search } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useDebounce } from "use-debounce";
-import { Input } from "@/components/ui/input";
+import { useCategories } from "@/hooks/useCategories";
 
 export function SearchBar() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const searchParamsRef = useRef(searchParams.toString());
   searchParamsRef.current = searchParams.toString();
+  const { data: categories } = useCategories();
 
   const [query, setQuery] = useState(searchParams.get("search") || "");
+  const [category, setCategory] = useState(searchParams.get("category") || "");
   const [debouncedQuery] = useDebounce(query, 500);
 
   useEffect(() => {
@@ -38,21 +40,59 @@ export function SearchBar() {
     } else {
       params.delete("search");
     }
+    if (category) {
+      params.set("category", category);
+    } else {
+      params.delete("category");
+    }
+    params.delete("page");
+    router.replace(`/?${params.toString()}`);
+  };
+
+  const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    setCategory(value);
+    const params = new URLSearchParams(searchParamsRef.current);
+    if (value) {
+      params.set("category", value);
+    } else {
+      params.delete("category");
+    }
     params.delete("page");
     router.replace(`/?${params.toString()}`);
   };
 
   return (
-    <form onSubmit={handleSubmit} className="relative flex-1">
-      <Input
+    <form onSubmit={handleSubmit} className="flex h-(--search-height) w-full">
+      <select
+        value={category}
+        onChange={handleCategoryChange}
+        className="hidden h-full shrink-0 cursor-pointer rounded-l-sm border-0 bg-[#dadada] px-5 py-1 text-xs text-(--color-text-primary) focus:outline-none sm:block sm:max-w-[140px] sm:text-sm"
+        aria-label="Search category"
+      >
+        <option value="">All</option>
+        {categories?.map((cat) => (
+          <option key={cat.id} value={cat.slug}>
+            {cat.name}
+          </option>
+        ))}
+      </select>
+
+      <input
         type="search"
-        placeholder="Search products..."
+        placeholder="Search Amazon Clone"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        className="pr-10 text-black"
+        className="h-full min-w-0 flex-1 border-0 bg-[#ffffff]  px-3 text-sm text-(--color-text-primary) placeholder:text-(--color-text-muted)"
+        aria-label="Search products"
       />
-      <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-        <Search className="h-4 w-4" />
+
+      <button
+        type="submit"
+        className="flex h-full w-11 shrink-0 items-center justify-center rounded-r-sm bg-amazon-orange transition-colors hover:bg-(--color-accent-orange-hover) focus:outline focus:outline-white"
+        aria-label="Search"
+      >
+        <Search className="h-5 w-5 text-(--color-text-primary)" />
       </button>
     </form>
   );

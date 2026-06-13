@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { DEFAULT_CURRENCY, formatPrice } from "@/lib/utils";
+import { useUIStore } from "@/store/ui.store";
 
 interface CartSummaryProps {
   subtotalCents: number;
@@ -21,6 +22,8 @@ export function CartSummary({
   currency = DEFAULT_CURRENCY,
   showCheckoutButton = true,
 }: CartSummaryProps) {
+  const closeCart = useUIStore((s) => s.closeCart);
+
   return (
     <div className="rounded border border-(--color-border) bg-white p-5 shadow-(--shadow-card)">
       <h2 className="text-lg font-normal text-(--color-text-primary)">
@@ -44,7 +47,7 @@ export function CartSummary({
       </div>
 
       {showCheckoutButton && (
-        <Link href="/checkout" className="mt-5 block">
+        <Link href="/checkout" className="mt-5 block" onClick={closeCart}>
           <Button variant="amazon" className="w-full rounded-full py-6 text-base" size="lg" disabled={itemCount === 0}>
             Proceed to Checkout
           </Button>

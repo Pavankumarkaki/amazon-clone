@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useOrder } from "@/hooks/useOrders";
 import { useAuthStore } from "@/store/auth.store";
 
-export default function OrderDetailPage() {
+export default function OrderConfirmationPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const user = useAuthStore((s) => s.user);

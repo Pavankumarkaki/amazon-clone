@@ -23,7 +23,7 @@ class OrderService:
     async def create_order(
         self,
         data: OrderCreate,
-        user: User | None = None,
+        user: User,
     ) -> Order:
         validated = await self.cart_service.validate(data.items)
 
@@ -50,14 +50,14 @@ class OrderService:
         ]
 
         order = await self.order_repo.create(
-            user_id=user.id if user else None,
+            user_id=user.id,
             total_cents=validated.total_cents,
             shipping_address=data.shipping_address.model_dump(),
             items=order_items,
         )
 
         await send_order_confirmation(
-            to_email=user.email if user else "guest@example.com",
+            to_email=data.shipping_address.email or user.email,
             order_id=str(order.id),
             total_cents=order.total_cents,
             recipient_name=data.shipping_address.full_name,
@@ -65,11 +65,11 @@ class OrderService:
 
         return order
 
-    async def get_order(self, order_id: uuid.UUID, user: User | None = None) -> Order:
+    async def get_order(self, order_id: uuid.UUID, user: User) -> Order:
         order = await self.order_repo.get_by_id(order_id)
         if not order:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Order not found")
-        if user and order.user_id and order.user_id != user.id:
+        if order.user_id != user.id:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
         return order
 

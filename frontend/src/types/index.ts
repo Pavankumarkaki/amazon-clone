@@ -88,6 +88,7 @@ export interface CartValidateResponse {
 
 export interface ShippingAddress {
   full_name: string;
+  email?: string;
   address_line1: string;
   address_line2?: string;
   city: string;
@@ -102,6 +103,8 @@ export interface OrderItem {
   product_id: string;
   quantity: number;
   unit_price_cents: number;
+  title: string;
+  image_url?: string | null;
 }
 
 export interface Order {

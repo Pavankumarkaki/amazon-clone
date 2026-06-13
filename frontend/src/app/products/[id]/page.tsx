@@ -21,6 +21,7 @@ import {
   useWishlist,
 } from "@/hooks/useWishlist";
 import { useAuthStore } from "@/store/auth.store";
+import { useCheckoutStore } from "@/store/checkout.store";
 import type { ProductCard } from "@/types";
 
 export default function ProductDetailPage() {
@@ -96,9 +97,27 @@ export default function ProductDetailPage() {
     toast.success(quantity > 1 ? `Added ${quantity} items to cart` : "Added to cart");
   };
 
-  const handleBuyNow = async (quantity = 1) => {
-    await handleAddToCart(quantity);
-    router.push("/checkout");
+  const handleBuyNow = (quantity = 1) => {
+    if (!user) {
+      router.push("/login");
+      return;
+    }
+    if (product.stock <= 0) {
+      toast.error("Out of stock");
+      return;
+    }
+    useCheckoutStore.getState().setBuyNowItems([
+      {
+        productId: product.id,
+        title: product.title,
+        priceCents: product.price_cents,
+        quantity,
+        currency: product.currency,
+        imageUrl: product.images[0]?.url,
+        stock: product.stock,
+      },
+    ]);
+    router.push("/checkout?buyNow=1");
   };
 
   const handleToggleWishlist = async () => {

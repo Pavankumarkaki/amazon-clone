@@ -5,9 +5,9 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_db
-from app.core.deps import get_current_user, get_current_user_optional
+from app.core.deps import get_current_user
 from app.models.user import User
-from app.schemas.order import OrderCreate, OrderRead
+from app.schemas.order import OrderCreate, OrderRead, order_to_read
 from app.services.order_service import OrderService
 
 router = APIRouter(prefix="/orders", tags=["orders"])
@@ -17,11 +17,11 @@ router = APIRouter(prefix="/orders", tags=["orders"])
 async def create_order(
     data: OrderCreate,
     db: Annotated[AsyncSession, Depends(get_db)],
-    user: Annotated[User | None, Depends(get_current_user_optional)] = None,
+    user: Annotated[User, Depends(get_current_user)],
 ):
     service = OrderService(db)
     order = await service.create_order(data, user)
-    return OrderRead.model_validate(order)
+    return order_to_read(order)
 
 
 @router.get("", response_model=list[OrderRead])
@@ -31,15 +31,15 @@ async def list_orders(
 ):
     service = OrderService(db)
     orders = await service.list_orders(user)
-    return [OrderRead.model_validate(o) for o in orders]
+    return [order_to_read(o) for o in orders]
 
 
 @router.get("/{order_id}", response_model=OrderRead)
 async def get_order(
     order_id: uuid.UUID,
     db: Annotated[AsyncSession, Depends(get_db)],
-    user: Annotated[User | None, Depends(get_current_user_optional)] = None,
+    user: Annotated[User, Depends(get_current_user)],
 ):
     service = OrderService(db)
     order = await service.get_order(order_id, user)
-    return OrderRead.model_validate(order)
+    return order_to_read(order)

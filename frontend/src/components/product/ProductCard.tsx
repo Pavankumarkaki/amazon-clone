@@ -48,6 +48,7 @@ export function ProductCard({ product }: ProductCardProps) {
     <article className="group flex h-full flex-col bg-white p-3 transition-shadow hover:shadow-(--shadow-card-hover)">
       <Link href={`/products/${product.id}`} className="flex flex-1 flex-col">
         <div className="relative mb-3 flex aspect-square items-center justify-center overflow-hidden bg-white">
+          <div className="absolute top-2 left-2 bg-amazon-deal text-white px-2 py-1 rounded-sm text-xs font-medium">{product.discount_percentage}% off</div>
           {imageUrl ? (
             <img
               src={imageUrl}
@@ -69,12 +70,24 @@ export function ProductCard({ product }: ProductCardProps) {
           <StarRating rating={rating} reviewCount={count} />
         </div>
 
-        <div className="mt-1.5">
+        <div className="mt-1.5 flex min-w-0 flex-col gap-0.5 sm:flex-row sm:items-baseline sm:gap-x-1.5">
           <PriceTag cents={product.price_cents} currency={product.currency} size="md" />
+          {product.mrp_cents != null && product.mrp_cents > product.price_cents && (
+            <p className="text-product-meta leading-tight text-(--color-text-secondary)">
+              M.R.P.:{" "}
+              <PriceTag
+                cents={product.mrp_cents}
+                currency={product.currency}
+                size="sm"
+                showCents={false}
+                className="line-through text-(--color-text-secondary)"
+              />
+            </p>
+          )}
         </div>
 
         {isOutOfStock && (
-          <p className="mt-1 text-xs font-medium text-(--color-deal)">Currently unavailable</p>
+          <p className="mt-1 text-xs font-medium text-amazon-deal">Currently unavailable</p>
         )}
       </Link>
 

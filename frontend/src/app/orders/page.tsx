@@ -3,10 +3,9 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import { OrderListCard } from "@/components/order/OrderListCard";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { DEFAULT_CURRENCY, formatPrice } from "@/lib/utils";
 import { useOrders } from "@/hooks/useOrders";
 import { useAuthStore } from "@/store/auth.store";
 
@@ -24,54 +23,35 @@ export default function OrdersPage() {
 
   if (isLoading || ordersLoading) {
     return (
-      <div className="space-y-4">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <Skeleton key={i} className="h-24 w-full" />
-        ))}
+      <div className="mx-auto max-w-(--container-max) px-4 py-6">
+        <Skeleton className="mb-6 h-9 w-48" />
+        <div className="space-y-4">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-40 w-full" />
+          ))}
+        </div>
       </div>
     );
   }
 
   if (!orders?.length) {
     return (
-      <div className="py-16 text-center">
-        <h1 className="text-2xl font-bold">No orders yet</h1>
-        <p className="mt-2 text-gray-500">Start shopping to see your orders here</p>
-        <Link href="/" className="mt-4 inline-block text-amber-600 hover:underline">
-          Browse Products
+      <div className="mx-auto max-w-(--container-max) px-4 py-16 text-center">
+        <h1 className="text-2xl font-bold text-(--color-text-primary)">Your Orders</h1>
+        <p className="mt-4 text-(--color-text-secondary)">You haven&apos;t placed any orders yet.</p>
+        <Link href="/" className="mt-6 inline-block">
+          <Button variant="amazon">Start Shopping</Button>
         </Link>
       </div>
     );
   }
 
   return (
-    <div>
-      <h1 className="mb-6 text-2xl font-bold">Your Orders</h1>
+    <div className="mx-auto max-w-(--container-max) px-4 py-6">
+      <h1 className="mb-6 text-2xl font-bold text-(--color-text-primary)">Your Orders</h1>
       <div className="space-y-4">
         {orders.map((order) => (
-          <Link key={order.id} href={`/orders/${order.id}`}>
-            <Card className="transition-shadow hover:shadow-md">
-              <CardContent className="flex items-center justify-between p-4">
-                <div>
-                  <p className="text-sm text-gray-500">
-                    {new Date(order.created_at).toLocaleDateString("en-US", {
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    })}
-                  </p>
-                  <p className="font-medium">Order #{order.id.slice(0, 8)}</p>
-                  <p className="text-sm text-gray-600">{order.items.length} item(s)</p>
-                </div>
-                <div className="text-right">
-                  <p className="font-semibold text-amber-700">{formatPrice(order.total_cents, DEFAULT_CURRENCY)}</p>
-                  <Badge variant="secondary" className="mt-1 capitalize">
-                    {order.status}
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
+          <OrderListCard key={order.id} order={order} />
         ))}
       </div>
     </div>

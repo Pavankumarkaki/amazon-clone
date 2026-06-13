@@ -28,14 +28,14 @@ export function PriceTag({
 
   if (!showCents || !centsPart) {
     return (
-      <span className={`font-normal text-[var(--color-text-primary)] ${whole} ${className}`}>
+      <span className={`font-normal text-(--color-text-primary) ${whole} ${className}`}>
         {formatted}
       </span>
     );
   }
 
   return (
-    <span className={`text-[var(--color-text-primary)] ${className}`}>
+    <span className={`text-(--color-text-primary) ${className}`}>
       <span className={whole}>{dollars}</span>
       <sup className={`${centsClass} -top-1`}>{centsPart}</sup>
     </span>

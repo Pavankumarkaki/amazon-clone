@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models.order import Order, OrderItem, OrderStatus
+from app.models.product import Product
 
 
 class OrderRepository:
@@ -45,7 +46,11 @@ class OrderRepository:
     async def get_by_id(self, order_id: uuid.UUID) -> Order | None:
         result = await self.db.execute(
             select(Order)
-            .options(selectinload(Order.items))
+            .options(
+                selectinload(Order.items)
+                .selectinload(OrderItem.product)
+                .selectinload(Product.images)
+            )
             .where(Order.id == order_id)
         )
         return result.scalar_one_or_none()
@@ -53,7 +58,11 @@ class OrderRepository:
     async def list_by_user(self, user_id: uuid.UUID) -> list[Order]:
         result = await self.db.execute(
             select(Order)
-            .options(selectinload(Order.items))
+            .options(
+                selectinload(Order.items)
+                .selectinload(OrderItem.product)
+                .selectinload(Product.images)
+            )
             .where(Order.user_id == user_id)
             .order_by(Order.created_at.desc())
         )

@@ -10,7 +10,7 @@ from app.repositories.product_repository import ProductRepository
 from app.schemas.cart import CartItemInput
 from app.schemas.order import OrderCreate
 from app.services.cart_service import CartService
-from app.utils.email import send_order_confirmation
+from app.utils.email import build_order_confirmation_email, send_order_confirmation
 
 
 class OrderService:
@@ -56,12 +56,7 @@ class OrderService:
             items=order_items,
         )
 
-        await send_order_confirmation(
-            to_email=data.shipping_address.email or user.email,
-            order_id=str(order.id),
-            total_cents=order.total_cents,
-            recipient_name=data.shipping_address.full_name,
-        )
+        await send_order_confirmation(build_order_confirmation_email(order))
 
         return order
 

@@ -8,6 +8,6 @@ data:
   POSTGRES_USER: amazon
   ACCESS_TOKEN_EXPIRE_MINUTES: "30"
   REFRESH_TOKEN_EXPIRE_DAYS: "7"
-  MAIL_FROM: noreply@amazon-clone.local
-  MAIL_SERVER: smtp.gmail.com
+  MAIL_FROM: noreply@shop.pa1.tech
+  MAIL_SERVER: smtp-relay.brevo.com
   MAIL_PORT: "587"

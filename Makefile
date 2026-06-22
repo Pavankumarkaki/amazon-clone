@@ -35,6 +35,12 @@ test:
 docker-build-backend:
 	docker build -t amazon-clone-backend ./backend
 
+docker-tag-backend:
+	docker tag amazon-clone-backend amazonclonepavan123.azurecr.io/amazon-clone-backend:latest
+
+docker-push-backend:
+	docker push amazonclonepavan123.azurecr.io/amazon-clone-backend:latest
+
 docker-build-frontend:
 	docker build --build-arg NEXT_PUBLIC_API_URL=/api/v1 -t amazon-clone-frontend ./frontend
 
